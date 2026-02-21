@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ShoppingBag, Menu, X, Coffee } from "lucide-react";
+import { signIn } from "@/lib/auth-client";
+import { useSession, signOut } from "@/lib/auth-client";
 
 // ─── Google Icon ───────────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -24,6 +26,47 @@ interface AuthModalProps {
     onClose: () => void;
     initialMode?: AuthMode;
 }
+
+
+function NavActions({ openAuth }: { openAuth: (mode: AuthMode) => void }) {
+    const { data: session, isPending } = useSession();
+
+    if (isPending) return (
+        <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+    );
+
+    if (session?.user) {
+        return (
+            <div className="flex items-center gap-3">
+                {/* User avatar */}
+                <img
+                    src={session.user.image ?? "/default-avatar.png"}
+                    alt={session.user.name ?? "User"}
+                    className="w-9 h-9 rounded-full border-2 border-[#FBBF24] object-cover"
+                />
+                {/* Name — desktop only */}
+                <span className="hidden md:block text-white/80 font-bold text-sm">
+                    {session.user.name?.split(" ")[0]}
+                </span>
+                {/* Sign out */}
+                <button
+                    onClick={() => signOut()}
+                    className="hidden md:block border border-white/20 text-white/60 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-red-400 hover:text-red-400 transition-all duration-300"
+                >
+                    Sign Out
+                </button>
+            </div>
+        );
+    }
+
+    // Not logged in — show original buttons
+    return (
+        <>
+            <NavActions openAuth={openAuth} />
+        </>
+    );
+}
+
 
 function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
     const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -103,7 +146,15 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
                     </p>
 
                     {/* Google OAuth — only sign-in method */}
-                    <button className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 py-4 px-6 rounded-2xl font-bold text-sm hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-black/20">
+                    <button
+                        onClick={async () => {
+                            await signIn.social({
+                                provider: "google",
+                                callbackURL: "/",   // redirect here after login
+                            });
+                        }}
+                        className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 py-4 px-6 rounded-2xl font-bold text-sm hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-black/20"
+                    >
                         <GoogleIcon />
                         <span>
                             {mode === "login" ? "Continue with Google" : "Sign up with Google"}
