@@ -1,6 +1,9 @@
 import { betterAuth } from "better-auth";
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { MONGODB } from "../config/db";
 
 export const auth = betterAuth({
+  database: mongodbAdapter(MONGODB),
   baseURL: process.env.API_URL as string,
   trustedOrigins: [
     "http://localhost:3000",
