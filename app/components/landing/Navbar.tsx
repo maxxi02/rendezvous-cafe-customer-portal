@@ -6,6 +6,56 @@ import { ShoppingBag, Menu, X, Coffee } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
 import { useSession, signOut } from "@/lib/auth-client";
 
+function NavActions({ openAuth }: { openAuth: (mode: AuthMode) => void }) {
+    const { data: session, isPending } = useSession();
+
+    if (isPending) return (
+        <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+    );
+
+    if (session?.user) {
+        return (
+            <div className="flex items-center gap-3">
+                {/* Google Avatar */}
+                <img
+                    src={session.user.image ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name ?? "U")}&background=064E3B&color=FBBF24`}
+                    alt={session.user.name ?? "User"}
+                    referrerPolicy="no-referrer"  // 👈 required for Google images to load
+                    className="w-9 h-9 rounded-full border-2 border-[#FBBF24] object-cover"
+                />
+                <span className="hidden md:block text-white/80 font-bold text-sm">
+                    {session.user.name?.split(" ")[0]}
+                </span>
+                <button
+                    onClick={() => signOut()}
+                    className="hidden md:block border border-white/20 text-white/60 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-red-400 hover:text-red-400 transition-all duration-300"
+                >
+                    Sign Out
+                </button>
+            </div>
+        );
+    }
+
+    // ✅ Fixed — was calling <NavActions> itself before (infinite loop!)
+    return (
+        <>
+            <button
+                onClick={() => openAuth("login")}
+                className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
+            >
+                Log In
+            </button>
+            <button
+                onClick={() => openAuth("signup")}
+                className="hidden md:block bg-[#FBBF24] text-[#064E3B] px-6 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-amber-400/30"
+            >
+                Sign Up
+            </button>
+        </>
+    );
+}
+
+
 // ─── Google Icon ───────────────────────────────────────────────────────────────
 function GoogleIcon() {
     return (
@@ -28,44 +78,6 @@ interface AuthModalProps {
 }
 
 
-function NavActions({ openAuth }: { openAuth: (mode: AuthMode) => void }) {
-    const { data: session, isPending } = useSession();
-
-    if (isPending) return (
-        <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
-    );
-
-    if (session?.user) {
-        return (
-            <div className="flex items-center gap-3">
-                {/* User avatar */}
-                <img
-                    src={session.user.image ?? "/default-avatar.png"}
-                    alt={session.user.name ?? "User"}
-                    className="w-9 h-9 rounded-full border-2 border-[#FBBF24] object-cover"
-                />
-                {/* Name — desktop only */}
-                <span className="hidden md:block text-white/80 font-bold text-sm">
-                    {session.user.name?.split(" ")[0]}
-                </span>
-                {/* Sign out */}
-                <button
-                    onClick={() => signOut()}
-                    className="hidden md:block border border-white/20 text-white/60 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-red-400 hover:text-red-400 transition-all duration-300"
-                >
-                    Sign Out
-                </button>
-            </div>
-        );
-    }
-
-    // Not logged in — show original buttons
-    return (
-        <>
-            <NavActions openAuth={openAuth} />
-        </>
-    );
-}
 
 
 function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
@@ -248,21 +260,8 @@ export default function Navbar() {
                             <ShoppingBag size={18} strokeWidth={2.5} />
                         </button>
 
-                        {/* Log In — desktop */}
-                        <button
-                            onClick={() => openAuth("login")}
-                            className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
-                        >
-                            Log In
-                        </button>
-
-                        {/* Sign Up — desktop */}
-                        <button
-                            onClick={() => openAuth("signup")}
-                            className="hidden md:block bg-[#FBBF24] text-[#064E3B] px-6 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-amber-400/30"
-                        >
-                            Sign Up
-                        </button>
+                        {/* ✅ Replaces the static Log In / Sign Up buttons */}
+                        <NavActions openAuth={openAuth} />
 
                         {/* Mobile hamburger */}
                         <button
