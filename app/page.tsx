@@ -8,7 +8,8 @@ import {
 
 function LandingPage() {
   return (
-    <div className="bg-[#064E3B] text-white font-sans antialiased overflow-x-hidden">
+    <div className="bg-[#064E3B] text-white font-sans antialiased overflow-y-hidden">
+
       {/* Fixed navigation */}
       <Navbar />
 

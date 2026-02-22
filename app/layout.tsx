@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import LenisProvider from "./providers/LenisProvider";
 
 export const metadata: Metadata = {
   title: "Rendezvous Cafe",
@@ -33,7 +34,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <LenisProvider>
+          {children}
+        </LenisProvider>
+      </body>
     </html>
   );
 }

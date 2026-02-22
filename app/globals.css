@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 /* ─── Custom font classes ─── */
 .font-anton {
   font-family: "Anton", sans-serif;
@@ -11,6 +10,7 @@
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 } */
+
 
 .animate-wave {
   animation: wave-slide 8s linear infinite;
