@@ -5,8 +5,9 @@ import { useState, useEffect } from "react";
 import { ShoppingBag, Menu, X, Coffee } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
 import { useSession, signOut } from "@/lib/auth-client";
+import Image from "next/image";
 
-function NavActions({ openAuth }: { openAuth: (mode: AuthMode) => void }) {
+function NavActions({ openAuth }: { openAuth: () => void }) {
     const { data: session, isPending } = useSession();
 
     if (isPending) return (
@@ -17,11 +18,13 @@ function NavActions({ openAuth }: { openAuth: (mode: AuthMode) => void }) {
         return (
             <div className="flex items-center gap-3">
                 {/* Google Avatar */}
-                <img
+                <Image
                     src={session.user.image ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name ?? "U")}&background=064E3B&color=FBBF24`}
                     alt={session.user.name ?? "User"}
-                    referrerPolicy="no-referrer"  // 👈 required for Google images to load
+                    referrerPolicy="no-referrer"
                     className="w-9 h-9 rounded-full border-2 border-[#FBBF24] object-cover"
+                    width={500}
+                    height={500}
                 />
                 <span className="hidden md:block text-white/80 font-bold text-sm">
                     {session.user.name?.split(" ")[0]}
@@ -36,22 +39,13 @@ function NavActions({ openAuth }: { openAuth: (mode: AuthMode) => void }) {
         );
     }
 
-    // ✅ Fixed — was calling <NavActions> itself before (infinite loop!)
     return (
-        <>
-            <button
-                onClick={() => openAuth("login")}
-                className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
-            >
-                Log In
-            </button>
-            <button
-                onClick={() => openAuth("signup")}
-                className="hidden md:block bg-[#FBBF24] text-[#064E3B] px-6 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-amber-400/30"
-            >
-                Sign Up
-            </button>
-        </>
+        <button
+            onClick={openAuth}
+            className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
+        >
+            Log In
+        </button>
     );
 }
 
@@ -69,27 +63,12 @@ function GoogleIcon() {
 }
 
 // ─── Auth Modal ────────────────────────────────────────────────────────────────
-type AuthMode = "login" | "signup";
-
 interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
-    initialMode?: AuthMode;
 }
 
-
-
-
-function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
-    const [mode, setMode] = useState<AuthMode>(initialMode);
-
-    // Sync tab when modal reopens — done during render, not in an effect
-    const [prevOpen, setPrevOpen] = useState(isOpen);
-    if (isOpen !== prevOpen) {
-        setPrevOpen(isOpen);
-        if (isOpen) setMode(initialMode);
-    }
-
+function AuthModal({ isOpen, onClose }: AuthModalProps) {
     // Lock body scroll
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
@@ -99,7 +78,7 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -109,7 +88,7 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
             {/* Modal card */}
             <div className="relative w-full max-w-sm bg-[#064E3B] rounded-3xl shadow-2xl shadow-black/50 overflow-hidden border border-white/10">
                 {/* Amber top bar */}
-                <div className="h-1 w-full bg-gradient-to-r from-[#FBBF24] via-amber-300 to-[#FBBF24]" />
+                <div className="h-1 w-full bg-linear-to-r from-[#FBBF24] via-amber-300 to-[#FBBF24]" />
 
                 {/* Close button */}
                 <button
@@ -131,46 +110,26 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
                         </span>
                     </div>
 
-                    {/* Mode tabs */}
-                    <div className="flex w-full rounded-xl bg-white/5 p-1 mb-8 border border-white/10">
-                        {(["login", "signup"] as AuthMode[]).map((m) => (
-                            <button
-                                key={m}
-                                onClick={() => setMode(m)}
-                                className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${mode === m
-                                    ? "bg-[#FBBF24] text-[#064E3B] shadow-md shadow-amber-400/20"
-                                    : "text-white/50 hover:text-white"
-                                    }`}
-                            >
-                                {m === "login" ? "Log In" : "Sign Up"}
-                            </button>
-                        ))}
-                    </div>
-
                     {/* Heading */}
                     <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2">
-                        {mode === "login" ? "Welcome back." : "Join the brew."}
+                        Welcome back.
                     </h2>
                     <p className="text-white/40 text-sm font-medium mb-8 leading-relaxed">
-                        {mode === "login"
-                            ? "Sign in to access your orders and rewards."
-                            : "Create an account and start your coffee journey."}
+                        Sign in to access your orders and rewards.
                     </p>
 
-                    {/* Google OAuth — only sign-in method */}
+                    {/* Google OAuth */}
                     <button
                         onClick={async () => {
                             await signIn.social({
                                 provider: "google",
-                                callbackURL: "/",   // redirect here after login
+                                callbackURL: "/",
                             });
                         }}
                         className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 py-4 px-6 rounded-2xl font-bold text-sm hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-black/20"
                     >
                         <GoogleIcon />
-                        <span>
-                            {mode === "login" ? "Continue with Google" : "Sign up with Google"}
-                        </span>
+                        <span>Continue with Google</span>
                     </button>
 
                     {/* Fine print */}
@@ -194,7 +153,7 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
 const navLinks = [
     { label: "Home", href: "/" },
     { label: "Coffee", href: "/coffee" },
-    { label: "Store", href: "/store" },
+    { label: "Menu", href: "/menu" },
 ];
 
 // ─── Navbar ────────────────────────────────────────────────────────────────────
@@ -202,7 +161,6 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [authOpen, setAuthOpen] = useState(false);
-    const [authMode, setAuthMode] = useState<AuthMode>("login");
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -210,8 +168,7 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    const openAuth = (mode: AuthMode) => {
-        setAuthMode(mode);
+    const openAuth = () => {
         setAuthOpen(true);
         setMobileOpen(false);
     };
@@ -260,7 +217,6 @@ export default function Navbar() {
                             <ShoppingBag size={18} strokeWidth={2.5} />
                         </button>
 
-                        {/* ✅ Replaces the static Log In / Sign Up buttons */}
                         <NavActions openAuth={openAuth} />
 
                         {/* Mobile hamburger */}
@@ -300,19 +256,13 @@ export default function Navbar() {
                         </Link>
                     ))}
 
-                    {/* Mobile auth buttons */}
+                    {/* Mobile auth button */}
                     <div className="flex flex-col gap-3 mt-2">
                         <button
-                            onClick={() => openAuth("login")}
+                            onClick={openAuth}
                             className="border border-white/20 text-white/80 px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
                         >
                             Log In
-                        </button>
-                        <button
-                            onClick={() => openAuth("signup")}
-                            className="bg-[#FBBF24] text-[#064E3B] px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:bg-white transition-colors duration-300"
-                        >
-                            Sign Up
                         </button>
                     </div>
                 </div>
@@ -322,7 +272,6 @@ export default function Navbar() {
             <AuthModal
                 isOpen={authOpen}
                 onClose={() => setAuthOpen(false)}
-                initialMode={authMode}
             />
         </>
     );

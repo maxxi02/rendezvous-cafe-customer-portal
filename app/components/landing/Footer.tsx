@@ -69,7 +69,7 @@ export default function Footer() {
 
                 {/* Bottom copyright */}
                 <p className="text-center mt-10 text-xs font-bold text-white/25 uppercase tracking-[0.3em]">
-                    © {new Date().getFullYear()} Mokaro Coffee Roasters. All rights
+                    © {new Date().getFullYear()} Rendezvous Cafe. All rights
                     reserved.
                 </p>
             </div>
