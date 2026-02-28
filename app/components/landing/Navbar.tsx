@@ -19,10 +19,10 @@ function NavActions({ openAuth }: { openAuth: () => void }) {
             <div className="flex items-center gap-3">
                 {/* Google Avatar */}
                 <Image
-                    src={session.user.image ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name ?? "U")}&background=064E3B&color=FBBF24`}
+                    src={session.user.image ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name ?? "U")}&background=064e3b&color=fbbf24`}
                     alt={session.user.name ?? "User"}
                     referrerPolicy="no-referrer"
-                    className="w-9 h-9 rounded-full border-2 border-[#FBBF24] object-cover"
+                    className="w-9 h-9 rounded-full border-2 border-primary object-cover"
                     width={500}
                     height={500}
                 />
@@ -42,7 +42,7 @@ function NavActions({ openAuth }: { openAuth: () => void }) {
     return (
         <button
             onClick={openAuth}
-            className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
+            className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-all duration-300"
         >
             Log In
         </button>
@@ -86,9 +86,9 @@ function AuthModal({ isOpen, onClose }: AuthModalProps) {
             />
 
             {/* Modal card */}
-            <div className="relative w-full max-w-sm bg-[#064E3B] rounded-3xl shadow-2xl shadow-black/50 overflow-hidden border border-white/10">
+            <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl shadow-black/50 overflow-hidden border border-white/10">
                 {/* Amber top bar */}
-                <div className="h-1 w-full bg-linear-to-r from-[#FBBF24] via-amber-300 to-[#FBBF24]" />
+                <div className="h-1 w-full bg-linear-to-r from-primary via-primary/50 to-primary" />
 
                 {/* Close button */}
                 <button
@@ -102,11 +102,11 @@ function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <div className="px-8 pt-8 pb-10 flex flex-col items-center text-center">
                     {/* Brand mark */}
                     <div className="flex items-center gap-2 mb-8">
-                        <div className="w-9 h-9 rounded-full bg-[#FBBF24] flex items-center justify-center shadow-lg shadow-amber-400/30">
-                            <Coffee size={18} className="text-[#064E3B]" strokeWidth={2.5} />
+                        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                            <Coffee size={18} className="text-background" strokeWidth={2.5} />
                         </div>
                         <span className="text-xl font-black tracking-wider uppercase text-white">
-                            RENDEZVOUS<span className="text-[#FBBF24]">.</span>
+                            RENDEZVOUS<span className="text-primary">.</span>
                         </span>
                     </div>
 
@@ -177,7 +177,7 @@ export default function Navbar() {
         <>
             <nav
                 className={`fixed top-0 left-0 right-0 z-50 px-6 py-5 md:px-12 transition-all duration-500 ${scrolled
-                    ? "bg-[#064E3B]/90 backdrop-blur-md shadow-lg shadow-black/20"
+                    ? "bg-background/90 backdrop-blur-md shadow-lg shadow-black/20"
                     : "bg-transparent"
                     }`}
             >
@@ -185,7 +185,7 @@ export default function Navbar() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <span className="text-3xl font-black tracking-wider uppercase text-white transition-all duration-300">
-                            RENDEZVOUS<span className="text-[#FBBF24]">.</span>
+                            RENDEZVOUS<span className="text-primary">.</span>
                         </span>
                     </Link>
 
@@ -195,12 +195,12 @@ export default function Navbar() {
                             <Link
                                 key={link.label}
                                 href={link.href}
-                                className={`relative pb-1 transition-colors duration-300 hover:text-[#FBBF24] group ${link.label === "Home" ? "text-[#FBBF24]" : "text-white/80"
+                                className={`relative pb-1 transition-colors duration-300 hover:text-primary group ${link.label === "Home" ? "text-primary" : "text-white/80"
                                     }`}
                             >
                                 {link.label}
                                 <span
-                                    className={`absolute bottom-0 left-0 h-0.5 bg-[#FBBF24] transition-all duration-300 ${link.label === "Home" ? "w-full" : "w-0 group-hover:w-full"
+                                    className={`absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-300 ${link.label === "Home" ? "w-full" : "w-0 group-hover:w-full"
                                         }`}
                                 />
                             </Link>
@@ -212,7 +212,7 @@ export default function Navbar() {
                         {/* Cart */}
                         <button
                             aria-label="Cart"
-                            className="w-10 h-10 flex items-center justify-center bg-[#FBBF24] text-[#064E3B] rounded-full hover:scale-110 hover:bg-white transition-all duration-300 shadow-lg shadow-amber-400/30"
+                            className="w-10 h-10 flex items-center justify-center bg-primary text-background rounded-full hover:scale-110 hover:bg-white transition-all duration-300 shadow-lg shadow-primary/30"
                         >
                             <ShoppingBag size={18} strokeWidth={2.5} />
                         </button>
@@ -242,7 +242,7 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                 />
                 <div
-                    className={`absolute top-0 right-0 h-full w-72 bg-[#064E3B] flex flex-col pt-24 px-8 gap-6 shadow-2xl transition-transform duration-500 ${mobileOpen ? "translate-x-0" : "translate-x-full"
+                    className={`absolute top-0 right-0 h-full w-72 bg-background flex flex-col pt-24 px-8 gap-6 shadow-2xl transition-transform duration-500 ${mobileOpen ? "translate-x-0" : "translate-x-full"
                         }`}
                 >
                     {navLinks.map((link) => (
@@ -250,7 +250,7 @@ export default function Navbar() {
                             key={link.label}
                             href={link.href}
                             onClick={() => setMobileOpen(false)}
-                            className="text-2xl font-black uppercase tracking-widest text-white hover:text-[#FBBF24] transition-colors duration-300 border-b border-white/10 pb-4"
+                            className="text-2xl font-black uppercase tracking-widest text-white hover:text-primary transition-colors duration-300 border-b border-white/10 pb-4"
                         >
                             {link.label}
                         </Link>
@@ -260,7 +260,7 @@ export default function Navbar() {
                     <div className="flex flex-col gap-3 mt-2">
                         <button
                             onClick={openAuth}
-                            className="border border-white/20 text-white/80 px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:border-[#FBBF24] hover:text-[#FBBF24] transition-all duration-300"
+                            className="border border-white/20 text-white/80 px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:border-primary hover:text-primary transition-all duration-300"
                         >
                             Log In
                         </button>

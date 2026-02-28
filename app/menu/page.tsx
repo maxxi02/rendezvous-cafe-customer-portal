@@ -124,13 +124,13 @@ export default function MenuPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#064E3B]">
+        <div className="min-h-screen bg-background">
             {/* Top bar */}
-            <div className="sticky top-0 z-30 bg-[#064E3B]/90 backdrop-blur-md border-b border-white/10 px-6 py-4">
+            <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-white/10 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div>
                         <h1 className="text-white font-black text-2xl uppercase tracking-widest">
-                            RENDEZVOUS<span className="text-[#FBBF24]">.</span>
+                            RENDEZVOUS<span className="text-primary">.</span>
                         </h1>
                         <p className="text-white/40 text-xs tracking-widest uppercase mt-0.5">Our Menu</p>
                     </div>
@@ -138,7 +138,7 @@ export default function MenuPage() {
                     {/* Cart button */}
                     <button
                         onClick={() => setShowCart(true)}
-                        className="relative flex items-center gap-3 bg-[#FBBF24] text-[#064E3B] px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-amber-400/30"
+                        className="relative flex items-center gap-3 bg-primary text-background px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/30"
                     >
                         <ShoppingCart className="w-4 h-4" />
                         <span>Cart</span>
@@ -146,7 +146,7 @@ export default function MenuPage() {
                             <>
                                 <span className="font-black">·</span>
                                 <span>₱{cartTotal.toFixed(0)}</span>
-                                <span className="absolute -top-2 -right-2 h-5 w-5 bg-[#064E3B] text-[#FBBF24] text-xs rounded-full flex items-center justify-center font-black border-2 border-[#FBBF24]">
+                                <span className="absolute -top-2 -right-2 h-5 w-5 bg-background text-primary text-xs rounded-full flex items-center justify-center font-black border-2 border-primary">
                                     {cartCount}
                                 </span>
                             </>
@@ -163,7 +163,7 @@ export default function MenuPage() {
                             key={type}
                             onClick={() => { setSelectedMenuType(type); setSelectedCategory('All'); }}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest border transition-all duration-200 ${selectedMenuType === type
-                                ? 'bg-[#FBBF24] text-[#064E3B] border-[#FBBF24] shadow-lg shadow-amber-400/20'
+                                ? 'bg-primary text-background border-primary shadow-lg shadow-primary/20'
                                 : 'bg-transparent text-white/60 border-white/20 hover:border-white/40 hover:text-white'
                                 }`}
                         >
@@ -194,7 +194,7 @@ export default function MenuPage() {
                 {isLoading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {[...Array(10)].map((_, i) => (
-                            <div key={i} className="rounded-2xl bg-[#0a3728] animate-pulse h-64" />
+                            <div key={i} className="rounded-2xl bg-white/5 animate-pulse h-64" />
                         ))}
                     </div>
                 ) : filteredProducts.length === 0 ? (
@@ -215,7 +215,7 @@ export default function MenuPage() {
             {showCart && (
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-                    <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#052e1c] border-l border-white/10 flex flex-col shadow-2xl">
+                    <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background border-l border-white/10 flex flex-col shadow-2xl">
                         <Cart
                             items={cart}
                             onUpdate={updateCart}
@@ -230,7 +230,7 @@ export default function MenuPage() {
             {/* Desktop cart sidebar */}
             {showCart && (
                 <div className="hidden lg:block fixed right-6 top-24 z-40 w-96">
-                    <div className="bg-[#052e1c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="bg-background border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
                         <Cart
                             items={cart}
                             onUpdate={updateCart}

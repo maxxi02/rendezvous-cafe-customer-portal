@@ -21,7 +21,7 @@ interface MenuCardProps {
 
 export function MenuCard({ product, onAdd }: MenuCardProps) {
     return (
-        <div className="group relative rounded-2xl overflow-hidden bg-[#0a3728] border border-white/10 hover:border-[#FBBF24]/50 transition-all duration-300 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1">
+        <div className="group relative rounded-2xl overflow-hidden bg-card border border-white/10 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1">
             {/* Image */}
             <div className="relative h-44 overflow-hidden">
                 {product.imageUrl ? (
@@ -31,12 +31,12 @@ export function MenuCard({ product, onAdd }: MenuCardProps) {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                 ) : (
-                    <div className="w-full h-full bg-[#064E3B] flex items-center justify-center text-5xl">
+                    <div className="w-full h-full bg-background flex items-center justify-center text-5xl">
                         {product.menuType === 'drink' ? '☕' : '🍽️'}
                     </div>
                 )}
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a3728] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
             </div>
 
             {/* Content */}
@@ -50,17 +50,17 @@ export function MenuCard({ product, onAdd }: MenuCardProps) {
                     </p>
                 )}
                 <div className="flex items-center justify-between mt-4">
-                    <span className="text-[#FBBF24] font-black text-lg">
+                    <span className="text-primary font-black text-lg">
                         ₱{product.price.toFixed(2)}
                     </span>
                     <button
                         onClick={() => onAdd(product)}
-                        className="h-9 w-9 rounded-full bg-[#FBBF24] text-[#064E3B] flex items-center justify-center hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg shadow-amber-400/30"
+                        className="h-9 w-9 rounded-full bg-primary text-background flex items-center justify-center hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg shadow-primary/30"
                     >
                         <Plus className="w-4 h-4 stroke-[3]" />
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -45,7 +45,7 @@ export function Cart({ items, onUpdate, onRemove, onClose, onCheckout }: CartPro
                             )}
                             <div className="flex-1 min-w-0">
                                 <p className="font-bold text-white text-sm truncate uppercase tracking-wide">{item.name}</p>
-                                <p className="text-[#FBBF24] text-xs font-bold mt-0.5">
+                                <p className="text-primary text-xs font-bold mt-0.5">
                                     ₱{(item.price * item.quantity).toFixed(2)}
                                 </p>
                             </div>
@@ -80,11 +80,11 @@ export function Cart({ items, onUpdate, onRemove, onClose, onCheckout }: CartPro
                 <div className="px-6 py-5 border-t border-white/10 space-y-4">
                     <div className="flex justify-between items-center">
                         <span className="text-white/60 font-medium uppercase tracking-widest text-xs">Total</span>
-                        <span className="text-[#FBBF24] font-black text-2xl">₱{total.toFixed(2)}</span>
+                        <span className="text-primary font-black text-2xl">₱{total.toFixed(2)}</span>
                     </div>
                     <button
                         onClick={onCheckout}
-                        className="w-full bg-[#FBBF24] text-[#064E3B] py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-amber-400/20"
+                        className="w-full bg-primary text-background py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/20"
                     >
                         Place Order
                     </button>

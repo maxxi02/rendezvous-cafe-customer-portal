@@ -45,9 +45,9 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
 
     return (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-[#052e1c] rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+            <div className="w-full max-w-md bg-background rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
                 {/* Amber top bar */}
-                <div className="h-1 w-full bg-gradient-to-r from-[#FBBF24] via-amber-300 to-[#FBBF24]" />
+                <div className="h-1 w-full bg-gradient-to-r from-primary via-primary/50 to-primary" />
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -68,7 +68,7 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
                     {items.map(item => (
                         <div key={item._id} className="flex justify-between text-sm py-1">
                             <span className="text-white/70 font-medium">{item.name} × {item.quantity}</span>
-                            <span className="text-[#FBBF24] font-bold">₱{(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="text-primary font-bold">₱{(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                     ))}
                 </div>
@@ -82,7 +82,7 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
                             value={customerName}
                             onChange={e => setCustomerName(e.target.value)}
                             placeholder="Enter your name"
-                            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#FBBF24]/50 focus:bg-white/15 transition-all"
+                            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all"
                         />
                     </div>
 
@@ -95,7 +95,7 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
                                     key={type}
                                     onClick={() => setOrderType(type)}
                                     className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${orderType === type
-                                        ? 'bg-[#FBBF24] text-[#064E3B] border-[#FBBF24]'
+                                        ? 'bg-primary text-background border-primary'
                                         : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30'
                                         }`}
                                 >
@@ -114,7 +114,7 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
                                 value={tableNumber}
                                 onChange={e => setTableNumber(e.target.value)}
                                 placeholder="e.g. Table 5"
-                                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#FBBF24]/50 focus:bg-white/15 transition-all"
+                                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all"
                             />
                         </div>
                     )}
@@ -127,7 +127,7 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
                             onChange={e => setOrderNote(e.target.value)}
                             placeholder="Any special requests?"
                             rows={2}
-                            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#FBBF24]/50 focus:bg-white/15 transition-all resize-none"
+                            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all resize-none"
                         />
                     </div>
 
@@ -135,7 +135,7 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
                     <button
                         onClick={handleConfirm}
                         disabled={loading || !customerName.trim()}
-                        className="w-full bg-[#FBBF24] text-[#064E3B] py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20"
+                        className="w-full bg-primary text-background py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                     >
                         {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Placing Order...</> : 'Confirm Order →'}
                     </button>

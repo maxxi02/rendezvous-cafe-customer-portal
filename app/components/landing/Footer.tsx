@@ -24,14 +24,14 @@ function InstagramIcon() {
 
 export default function Footer() {
     return (
-        <footer className="bg-[#064E3B] py-12 px-6">
+        <footer className="bg-background py-12 px-6">
             <div className="max-w-7xl mx-auto">
                 {/* Top divider */}
                 <div className="border-t border-white/10 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
                     {/* Logo */}
                     <Link href="/" className="group">
-                        <span className="text-2xl font-black tracking-wider uppercase text-white group-hover:text-[#FBBF24] transition-colors duration-300">
-                            RENDEZVOUS<span className="text-[#FBBF24]">.</span>
+                        <span className="text-2xl font-black tracking-wider uppercase text-white group-hover:text-primary transition-colors duration-300">
+                            RENDEZVOUS<span className="text-primary">.</span>
                         </span>
                     </Link>
 
@@ -41,7 +41,7 @@ export default function Footer() {
                             <Link
                                 key={link.label}
                                 href={link.href}
-                                className="hover:text-[#FBBF24] transition-colors duration-300"
+                                className="hover:text-primary transition-colors duration-300"
                             >
                                 {link.label}
                             </Link>
@@ -53,14 +53,14 @@ export default function Footer() {
                         <a
                             href="#"
                             aria-label="Twitter"
-                            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white hover:bg-[#FBBF24] hover:text-[#064E3B] transition-all duration-300"
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white hover:bg-primary hover:text-background transition-all duration-300"
                         >
                             <TwitterIcon />
                         </a>
                         <a
                             href="#"
                             aria-label="Instagram"
-                            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white hover:bg-[#FBBF24] hover:text-[#064E3B] transition-all duration-300"
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white hover:bg-primary hover:text-background transition-all duration-300"
                         >
                             <InstagramIcon />
                         </a>

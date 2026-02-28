@@ -23,8 +23,8 @@ const features = [
 
 export default function FeaturesSection() {
     return (
-        <section className="bg-[#FBBF24] py-24 relative z-10">
-            <div className="max-w-7xl mx-auto px-6 text-[#064E3B]">
+        <section className="bg-primary py-24 relative z-10">
+            <div className="max-w-7xl mx-auto px-6 text-background">
                 {/* Section header */}
                 <div className="text-center mb-16">
                     <p className="text-xs font-black tracking-[0.4em] uppercase opacity-60 mb-2">
@@ -39,11 +39,11 @@ export default function FeaturesSection() {
                     {features.map((feature, i) => (
                         <div
                             key={feature.title}
-                            className="group flex flex-col items-center text-center gap-4 p-6 rounded-2xl hover:bg-[#064E3B]/10 transition-all duration-300 cursor-default"
+                            className="group flex flex-col items-center text-center gap-4 p-6 rounded-2xl hover:bg-background/10 transition-all duration-300 cursor-default"
                         >
                             {/* Icon circle */}
-                            <div className="w-16 h-16 rounded-full bg-[#064E3B] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                <span className="material-icons text-[#FBBF24] text-3xl">
+                            <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                <span className="material-icons text-primary text-3xl">
                                     {feature.icon}
                                 </span>
                             </div>
@@ -56,7 +56,7 @@ export default function FeaturesSection() {
                             </p>
 
                             {/* Decorative line */}
-                            <div className="w-8 h-0.5 bg-[#064E3B]/30 group-hover:w-16 transition-all duration-500" />
+                            <div className="w-8 h-0.5 bg-background/30 group-hover:w-16 transition-all duration-500" />
                         </div>
                     ))}
                 </div>

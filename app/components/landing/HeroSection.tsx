@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const coffeeProducts = [
     {
@@ -29,16 +32,44 @@ const coffeeProducts = [
 ];
 
 export default function HeroSection() {
-    return (
-        <main className="relative min-h-screen flex flex-col pt-32 overflow-hidden bg-[#064E3B]">
-            {/* Ambient glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FBBF24]/5 rounded-full blur-[120px] pointer-events-none" />
+    const [scrollOffset, setScrollOffset] = useState(0);
 
-            {/* Large watermark text */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.06]">
-                <span className="text-[20vw] font-black uppercase leading-none tracking-tighter text-white">
-                    RENDEZVOUS
-                </span>
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrollOffset(window.scrollY);
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const WatermarkMarquee = ({ direction = 1, speed = 1, opacity = 0.06 }) => (
+        <div
+            className="marquee-container w-full py-4 overflow-hidden"
+            style={{ opacity }}
+        >
+            <div
+                className="marquee-track whitespace-nowrap"
+                style={{
+                    transform: `translateX(calc(-50% + ${scrollOffset * speed * direction}px))`
+                }}
+            >
+                {[...Array(8)].map((_, i) => (
+                    <span key={i} className="text-[14vw] font-black uppercase leading-none tracking-tighter text-white inline-block px-10">
+                        RENDEZVOUS
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+
+    return (
+        <main className="relative min-h-screen flex flex-col pt-32 overflow-hidden bg-background">
+            {/* Ambient glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
+            {/* Scroll-Linked Marquee Watermark */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col pointer-events-none select-none z-0">
+                <WatermarkMarquee direction={-1} speed={0.6} opacity={0.06} />
             </div>
 
             <div className="relative z-10 container mx-auto px-6 flex flex-col items-center">
@@ -53,7 +84,7 @@ export default function HeroSection() {
                         </span>
                         {/* Cursive accent */}
                         <span
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FBBF24] whitespace-nowrap -rotate-6 pointer-events-none"
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary whitespace-nowrap -rotate-6 pointer-events-none"
                             style={{
                                 fontFamily: "'Caveat', cursive",
                                 fontSize: "clamp(2.5rem, 7vw, 5rem)",
@@ -71,25 +102,18 @@ export default function HeroSection() {
 
                 {/* Left sidebar description */}
                 <div className="absolute left-8 xl:left-12 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-5 max-w-[180px]">
-                    <div className="relative pl-5 border-l-2 border-[#FBBF24]">
-                        <span className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-[#FBBF24] rounded-full" />
-                        <p className="text-[10px] leading-relaxed tracking-wider uppercase text-white/50 font-medium">
+                    <div className="relative pl-5 border-l-2 border-primary">
+                        <span className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-primary rounded-full" />
+                        <p className="text-[10px] leading-relaxed tracking-wider uppercase text-foreground/50 font-medium font-sans">
                             Discover the taste of freshly roasted beans and handcrafted coffee
                             in every sip.
                         </p>
                         <Link
                             href="/coffee"
-                            className="inline-block mt-4 text-[10px] font-black text-[#FBBF24] underline underline-offset-4 tracking-widest uppercase hover:text-white transition-colors"
+                            className="inline-block mt-4 text-[10px] font-black text-primary underline underline-offset-4 tracking-widest uppercase hover:text-foreground transition-colors"
                         >
                             More Details
                         </Link>
-                    </div>
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10">
-                        <img
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcWi5F6ctt9lPxMSIPOq3AwoQyMIBRnkijqireJGktA_6PN_zgkArPq0OX3tgoNBOpQ7W7_JY6cVLUIEqUM-ptstKa_djOB8anFniMtd_9eBzoQUJiHlzVhZa6eZcC09BYBgWWU1WNPnlHeOA54XXFH73ASsAtExjYMdu1HGC8S9XucSjzvbsWJ_Uyp906JJ5cJqeViYlYqKXJH5VWPZRnCKwrOCSug41B7pvJxjT0aRYeBFvAXCuV3xu-nggcoTXhYEP3OSVZR5I"
-                            alt="Coffee beans"
-                            className="w-full h-full object-cover opacity-60"
-                        />
                     </div>
                 </div>
 
@@ -118,11 +142,11 @@ export default function HeroSection() {
                                         {product.name}
                                     </span>
                                     <div
-                                        className={`mt-2 border-2 border-white/40 rounded-full flex items-center justify-center bg-black/10 backdrop-blur-sm transition-all duration-300 group-hover:border-[#FBBF24] group-hover:bg-[#FBBF24]/10 ${product.featured ? "w-24 h-24" : "w-20 h-20"
+                                        className={`mt-2 border-2 border-white/40 rounded-full flex items-center justify-center bg-black/10 backdrop-blur-sm transition-all duration-300 group-hover:border-primary group-hover:bg-primary/10 ${product.featured ? "w-24 h-24" : "w-20 h-20"
                                             }`}
                                     >
                                         <span
-                                            className={`font-black tracking-widest text-white group-hover:text-[#FBBF24] transition-colors ${product.featured ? "text-sm" : "text-xs"
+                                            className={`font-black tracking-widest text-white group-hover:text-primary transition-colors ${product.featured ? "text-sm" : "text-xs"
                                                 }`}
                                         >
                                             {product.label}
@@ -145,12 +169,12 @@ export default function HeroSection() {
                 >
                     <path
                         d="M0,0 C150,120 300,0 450,120 C600,0 750,120 900,0 C1050,120 1200,0 1350,120 L1350,120 L0,120 Z"
-                        fill="#FBBF24"
+                        fill="var(--primary)"
                         opacity="0.4"
                     />
                     <path
                         d="M0,30 C150,150 300,30 450,150 C600,30 750,150 900,30 C1050,150 1200,30 1350,150 L1350,150 L0,150 Z"
-                        fill="#FBBF24"
+                        fill="var(--primary)"
                     />
                 </svg>
             </div>
