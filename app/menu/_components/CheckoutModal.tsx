@@ -4,17 +4,25 @@ import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { CustomerOrder, CustomerOrderItem } from '@/app/types/order.type';
 
+interface SessionData {
+    customerName: string;
+    tableId?: string;
+    qrType: string;
+    isAnonymous: boolean;
+}
+
 interface CheckoutModalProps {
     items: CustomerOrderItem[];
     total: number;
     onClose: () => void;
     onConfirm: (order: CustomerOrder) => Promise<void>;
+    sessionData?: SessionData | null;
 }
 
-export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModalProps) {
-    const [customerName, setCustomerName] = useState('');
-    const [orderType, setOrderType] = useState<'dine-in' | 'takeaway'>('takeaway');
-    const [tableNumber, setTableNumber] = useState('');
+export function CheckoutModal({ items, total, onClose, onConfirm, sessionData }: CheckoutModalProps) {
+    const [customerName, setCustomerName] = useState(sessionData?.customerName || '');
+    const [orderType, setOrderType] = useState<'dine-in' | 'takeaway'>(sessionData?.tableId ? 'dine-in' : 'takeaway');
+    const [tableNumber, setTableNumber] = useState(sessionData?.tableId || '');
     const [orderNote, setOrderNote] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -75,61 +83,77 @@ export function CheckoutModal({ items, total, onClose, onConfirm }: CheckoutModa
 
                 <div className="px-6 pb-6 space-y-4">
                     {/* Name */}
-                    <div>
-                        <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Your Name *</label>
-                        <input
-                            type="text"
-                            value={customerName}
-                            onChange={e => setCustomerName(e.target.value)}
-                            placeholder="Enter your name"
-                            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all"
-                        />
-                    </div>
+                    {(!sessionData?.isAnonymous) && (
+                        <div>
+                            <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Your Name *</label>
+                            <input
+                                type="text"
+                                value={customerName}
+                                onChange={e => setCustomerName(e.target.value)}
+                                placeholder="Enter your name"
+                                readOnly={!!sessionData?.customerName}
+                                className={`w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none ${sessionData?.customerName
+                                    ? 'bg-white/5 border-white/5 text-white/50 cursor-not-allowed'
+                                    : 'bg-white/10 border-white/10 text-white placeholder:text-white/30 focus:border-primary/50 focus:bg-white/15'
+                                    }`}
+                            />
+                        </div>
+                    )}
 
                     {/* Order type */}
-                    <div>
-                        <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Order Type</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {(['takeaway', 'dine-in'] as const).map(type => (
-                                <button
-                                    key={type}
-                                    onClick={() => setOrderType(type)}
-                                    className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${orderType === type
-                                        ? 'bg-primary text-background border-primary'
-                                        : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30'
-                                        }`}
-                                >
-                                    {type === 'takeaway' ? 'Take Away' : 'Dine In'}
-                                </button>
-                            ))}
+                    {!sessionData?.tableId && (
+                        <div>
+                            <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Order Type</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {(['takeaway', 'dine-in'] as const).map(type => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setOrderType(type)}
+                                        className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${orderType === type
+                                            ? 'bg-primary text-background border-primary'
+                                            : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30'
+                                            }`}
+                                    >
+                                        {type === 'takeaway' ? 'Take Away' : 'Dine In'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Table number */}
                     {orderType === 'dine-in' && (
                         <div>
                             <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Table Number</label>
-                            <input
-                                type="text"
-                                value={tableNumber}
-                                onChange={e => setTableNumber(e.target.value)}
-                                placeholder="e.g. Table 5"
-                                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all"
-                            />
+                            {sessionData?.tableId ? (
+                                <div className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-white/50 text-sm font-medium">
+                                    Table {sessionData.tableId}
+                                </div>
+                            ) : (
+                                <input
+                                    type="text"
+                                    value={tableNumber}
+                                    onChange={e => setTableNumber(e.target.value)}
+                                    placeholder="e.g. Table 5"
+                                    className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all"
+                                />
+                            )}
                         </div>
                     )}
 
                     {/* Notes */}
-                    <div>
-                        <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Special Instructions</label>
-                        <textarea
-                            value={orderNote}
-                            onChange={e => setOrderNote(e.target.value)}
-                            placeholder="Any special requests?"
-                            rows={2}
-                            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all resize-none"
-                        />
-                    </div>
+                    {!sessionData?.tableId && (
+                        <div>
+                            <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">Special Instructions</label>
+                            <textarea
+                                value={orderNote}
+                                onChange={e => setOrderNote(e.target.value)}
+                                placeholder="Any special requests?"
+                                rows={2}
+                                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all resize-none"
+                            />
+                        </div>
+                    )}
 
                     {/* Confirm button */}
                     <button

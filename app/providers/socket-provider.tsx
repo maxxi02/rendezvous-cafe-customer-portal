@@ -11,7 +11,7 @@ import {
 import { io, Socket } from "socket.io-client";
 
 const SOCKET_URL =
-    process.env.SOCKET_URL || "https://rendezvous-server-gpmv.onrender.com";
+    process.env.NEXT_PUBLIC_SOCKET_URL || "https://rendezvous-server-gpmv.onrender.com";
 
 const HEARTBEAT_INTERVAL = 30000;          // 30 seconds
 const ACTIVITY_DEBOUNCE = 5000;            // 5 seconds
@@ -76,6 +76,18 @@ export interface CustomerOrder {
     timestamp: Date;
 }
 
+export interface OrderSubmittedPayload {
+    orderId: string;
+    orderNumber: string;
+    queueStatus: string;
+}
+
+export interface OrderStatusChangedPayload {
+    orderId: string;
+    orderNumber: string;
+    queueStatus: string;
+}
+
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -117,6 +129,10 @@ interface SocketContextValue {
     // ─── Order listeners ──────────────────────────────────────────
     onNewCustomerOrder: (cb: (order: CustomerOrder) => void) => void;
     offNewCustomerOrder: (cb?: (order: CustomerOrder) => void) => void;
+    onOrderSubmitted: (cb: (data: OrderSubmittedPayload) => void) => void;
+    offOrderSubmitted: (cb?: (data: OrderSubmittedPayload) => void) => void;
+    onOrderStatusChanged: (cb: (data: OrderStatusChangedPayload) => void) => void;
+    offOrderStatusChanged: (cb?: (data: OrderStatusChangedPayload) => void) => void;
 }
 
 const SocketContext = createContext<SocketContextValue>({
@@ -145,15 +161,20 @@ const SocketContext = createContext<SocketContextValue>({
     emitCustomerOrder: () => { },
     onNewCustomerOrder: () => { },
     offNewCustomerOrder: () => { },
+    onOrderSubmitted: () => { },
+    offOrderSubmitted: () => { },
+    onOrderStatusChanged: () => { },
+    offOrderStatusChanged: () => { },
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 interface SocketProviderProps {
     children: ReactNode;
-    userId: string;
+    userId?: string;
     userName: string;
     userAvatar?: string;
+    sessionId?: string; // optional: customer portal passes this so the socket joins session:{sessionId}
 }
 
 export function SocketProvider({
@@ -161,6 +182,7 @@ export function SocketProvider({
     userId,
     userName,
     userAvatar,
+    sessionId,
 }: SocketProviderProps) {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
@@ -172,6 +194,8 @@ export function SocketProvider({
 
     // ─── Socket Connection ────────────────────────────────────────
     useEffect(() => {
+        // Require a userId to connect. Guests now have a real Better Auth session
+        // via the anonymous plugin, so they will pass this check.
         if (!userId) return;
 
         const socket = io(SOCKET_URL, {
@@ -185,9 +209,17 @@ export function SocketProvider({
 
         socketRef.current = socket;
 
+        const joinSessionRoom = () => {
+            if (sessionId) {
+                socket.emit("session:join", { sessionId });
+                console.log("📦 Joined session room:", sessionId);
+            }
+        };
+
         socket.on("connect", () => {
             setIsConnected(true);
-            socket.emit("user:online");
+            if (userId) socket.emit("user:online");
+            joinSessionRoom();
             console.log("✅ Connected to Socket.IO server:", socket.id);
         });
 
@@ -201,7 +233,8 @@ export function SocketProvider({
 
         socket.on("reconnect", (attemptNumber) => {
             setIsConnected(true);
-            socket.emit("user:online");
+            if (userId) socket.emit("user:online");
+            joinSessionRoom(); // Re-join after reconnect
             socket.emit("chat:conversations:load");
             console.log("🔄 Reconnected after", attemptNumber, "attempts");
         });
@@ -220,7 +253,8 @@ export function SocketProvider({
         // ─── Page Visibility ─────────────────────────────────────
         const handleVisibilityChange = () => {
             if (!document.hidden && socket.connected) {
-                socket.emit("user:online");
+                if (userId) socket.emit("user:online");
+                joinSessionRoom();
             }
         };
 
@@ -233,7 +267,7 @@ export function SocketProvider({
             socket.removeAllListeners();
             socketRef.current = null;
         };
-    }, [userId, userName, userAvatar]);
+    }, [userId, userName, userAvatar, sessionId]);
 
     // ─── Activity Tracking ────────────────────────────────────────
     useEffect(() => {
@@ -333,13 +367,23 @@ export function SocketProvider({
         socketRef.current?.emit('pos:join');
 
     const emitCustomerOrder = (order: CustomerOrder) =>
-        socketRef.current?.emit('order:new:trigger', order);
+        socketRef.current?.emit('order:submit', order);
 
     const onNewCustomerOrder = (cb: (order: CustomerOrder) => void) =>
         socketRef.current?.on('order:new', cb);
 
     const offNewCustomerOrder = (cb?: (order: CustomerOrder) => void) =>
         socketRef.current?.off('order:new', cb);
+
+    const onOrderSubmitted = (cb: (data: OrderSubmittedPayload) => void) =>
+        socketRef.current?.on('order:submitted', cb);
+    const offOrderSubmitted = (cb?: (data: OrderSubmittedPayload) => void) =>
+        socketRef.current?.off('order:submitted', cb);
+
+    const onOrderStatusChanged = (cb: (data: OrderStatusChangedPayload) => void) =>
+        socketRef.current?.on('order:status:changed', cb);
+    const offOrderStatusChanged = (cb?: (data: OrderStatusChangedPayload) => void) =>
+        socketRef.current?.off('order:status:changed', cb);
 
     return (
         <SocketContext.Provider
@@ -369,6 +413,10 @@ export function SocketProvider({
                 emitCustomerOrder,
                 onNewCustomerOrder,
                 offNewCustomerOrder,
+                onOrderSubmitted,
+                offOrderSubmitted,
+                onOrderStatusChanged,
+                offOrderStatusChanged,
             }}
         >
             {children}

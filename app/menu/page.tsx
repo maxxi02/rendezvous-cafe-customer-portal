@@ -8,6 +8,7 @@ import { Cart } from './_components/Cart';
 import { CheckoutModal } from './_components/CheckoutModal';
 import { CustomerOrderItem, CustomerOrder } from '@/app/types/order.type';
 import { useSocket } from '../providers/socket-provider';
+import { useRouter } from 'next/navigation';
 
 interface MenuItem {
     _id: string;
@@ -28,8 +29,19 @@ interface CategoryData {
     products: MenuItem[];
 }
 
+import { CustomerChat } from '../order/chat/CustomerChat';
+
+interface SessionData {
+    customerName: string;
+    tableId?: string;
+    qrType: string;
+    isAnonymous: boolean;
+    lastOrderId?: string;
+}
+
 export default function MenuPage() {
     const { emitCustomerOrder } = useSocket();
+    const router = useRouter();
 
     const [categories, setCategories] = useState<CategoryData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +50,19 @@ export default function MenuPage() {
     const [cart, setCart] = useState<CustomerOrderItem[]>([]);
     const [showCart, setShowCart] = useState(false);
     const [showCheckout, setShowCheckout] = useState(false);
+    const [sessionData, setSessionData] = useState<SessionData | null>(null);
+
+    // Load session data
+    useEffect(() => {
+        const stored = sessionStorage.getItem("orderSession");
+        if (stored) {
+            try {
+                setSessionData(JSON.parse(stored));
+            } catch (e) {
+                console.error("Failed to parse session data", e);
+            }
+        }
+    }, []);
 
     // Fetch products
     useEffect(() => {
@@ -119,8 +144,16 @@ export default function MenuPage() {
         setShowCart(false);
         toast.success('Order placed!', {
             description: 'The cashier will process your order shortly.',
-            duration: 5000,
+            duration: 3000,
         });
+
+        // Save latest order ID to session for the waiting page (optional, but good practice)
+        if (sessionData) {
+            sessionData.lastOrderId = order.orderId;
+            sessionStorage.setItem("orderSession", JSON.stringify(sessionData));
+        }
+
+        router.push('/order/waiting');
     };
 
     return (
@@ -249,8 +282,10 @@ export default function MenuPage() {
                     total={cartTotal}
                     onClose={() => setShowCheckout(false)}
                     onConfirm={handleConfirmOrder}
+                    sessionData={sessionData}
                 />
             )}
+
         </div>
     );
 }

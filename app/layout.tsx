@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     "Freshly brewed moments. Discover the taste of handcrafted coffee.",
 };
 
+import { ClientProviders } from "./providers/client-providers";
+
 export default function RootLayout({
   children,
 }: {
@@ -36,7 +38,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <LenisProvider>
-          {children}
+          <ClientProviders>
+            {children}
+          </ClientProviders>
         </LenisProvider>
       </body>
     </html>
