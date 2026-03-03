@@ -210,10 +210,14 @@ export function SocketProvider({
         socketRef.current = socket;
 
         const joinSessionRoom = () => {
+            // Always join the socket's own ID room so status updates can reach this client
+            socket.emit("session:join", { sessionId: socket.id });
+            // Also join named session room if provided
             if (sessionId) {
                 socket.emit("session:join", { sessionId });
-                console.log("📦 Joined session room:", sessionId);
+                console.log("📦 Joined named session room:", sessionId);
             }
+            console.log("📦 Joined socket session room:", socket.id);
         };
 
         socket.on("connect", () => {
@@ -366,8 +370,16 @@ export function SocketProvider({
     const emitPosJoin = () =>
         socketRef.current?.emit('pos:join');
 
-    const emitCustomerOrder = (order: CustomerOrder) =>
-        socketRef.current?.emit('order:submit', order);
+    const emitCustomerOrder = (order: CustomerOrder) => {
+        const socket = socketRef.current;
+        if (!socket) return;
+        // Inject socket.id as sessionId so the server can route status updates back
+        const orderWithSession = {
+            ...order,
+            sessionId: socket.id,
+        };
+        socket.emit('order:submit', orderWithSession);
+    };
 
     const onNewCustomerOrder = (cb: (order: CustomerOrder) => void) =>
         socketRef.current?.on('order:new', cb);
