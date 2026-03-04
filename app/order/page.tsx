@@ -28,16 +28,15 @@ function OrderLandingContent() {
         const fetchTable = async () => {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-                const res = await fetch(`${apiUrl}/api/tables`);
+                const res = await fetch(`${apiUrl}/api/tables/${tableId}`);
                 if (res.ok) {
-                    const tables = await res.json();
-                    const table = tables.find((t: any) => t.tableId === tableId);
-                    if (table) {
-                        setTableLabel(table.label);
-                    }
+                    const table = await res.json();
+                    setTableLabel(table.label);
+                } else {
+                    console.error("Table not found or API error", res.status);
                 }
             } catch (error) {
-                console.error("Failed to fetch tables", error);
+                console.error("Failed to fetch table", error);
             } finally {
                 setIsLoadingTable(false);
             }
