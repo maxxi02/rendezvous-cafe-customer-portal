@@ -42,14 +42,14 @@ function triggerVibration() {
 }
 
 // ─── Status configs ──────────────────────────────────────────────────────────
-type OrderStatus = 'pending_payment' | 'paid' | 'preparing' | 'serving' | 'served' | 'completed' | string;
+type OrderStatus = 'pending_payment' | 'queueing' | 'serving' | 'done' | string;
 
 function getStatusConfig(status: OrderStatus) {
     switch (status) {
         case 'serving':
             return {
                 icon: UtensilsCrossed,
-                title: 'Your Order is Being Served',
+                title: 'Being Served Now',
                 subtitle: 'Our staff is bringing your order to you right now!',
                 iconBg: 'bg-emerald-500/20',
                 iconColor: 'text-emerald-400',
@@ -58,20 +58,7 @@ function getStatusConfig(status: OrderStatus) {
                 badge: '🍽️ Serving',
                 badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
             };
-        case 'preparing':
-            return {
-                icon: ChefHat,
-                title: 'In The Kitchen',
-                subtitle: 'Our chefs are cooking up your order right now.',
-                iconBg: 'bg-amber-500/20',
-                iconColor: 'text-amber-400',
-                ringColor: 'border-amber-500/40',
-                pingColor: 'bg-amber-400/30',
-                badge: '👨‍🍳 Preparing',
-                badgeColor: 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
-            };
-        case 'served':
-        case 'completed':
+        case 'done':
             return {
                 icon: CheckCircle,
                 title: 'Enjoy Your Meal!',
@@ -80,11 +67,22 @@ function getStatusConfig(status: OrderStatus) {
                 iconColor: 'text-purple-400',
                 ringColor: 'border-purple-500/40',
                 pingColor: 'bg-purple-400/30',
-                badge: '✅ Served',
+                badge: '✅ Done',
                 badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/30',
             };
-        default:
-            // paid / pending_payment / in-queue
+        case 'pending_payment':
+            return {
+                icon: Package,
+                title: 'Awaiting Payment',
+                subtitle: 'Complete your GCash payment to confirm the order.',
+                iconBg: 'bg-yellow-500/20',
+                iconColor: 'text-yellow-400',
+                ringColor: 'border-yellow-500/40',
+                pingColor: 'bg-yellow-400/30',
+                badge: '💳 Pending Payment',
+                badgeColor: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+            };
+        default: // queueing
             return {
                 icon: Package,
                 title: 'Order Received',
@@ -93,7 +91,7 @@ function getStatusConfig(status: OrderStatus) {
                 iconColor: 'text-primary',
                 ringColor: 'border-primary/40',
                 pingColor: 'bg-primary/20',
-                badge: '⏳ In Queue',
+                badge: '⏳ Queueing',
                 badgeColor: 'bg-primary/10 text-primary border border-primary/20',
             };
     }
@@ -101,10 +99,9 @@ function getStatusConfig(status: OrderStatus) {
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
 const STEPS: { status: OrderStatus; label: string }[] = [
-    { status: 'paid', label: 'Order Received' },
-    { status: 'preparing', label: 'Preparing' },
+    { status: 'queueing', label: 'Received' },
     { status: 'serving', label: 'Serving' },
-    { status: 'served', label: 'Done' },
+    { status: 'done', label: 'Done ✓' },
 ];
 
 function getStepIndex(status: OrderStatus): number {
@@ -251,8 +248,8 @@ export default function WaitingPage() {
                             return (
                                 <div key={step.label} className="flex flex-col items-center gap-1.5 z-10 flex-1">
                                     <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${done
-                                            ? 'bg-primary border-primary'
-                                            : 'bg-background border-white/20'
+                                        ? 'bg-primary border-primary'
+                                        : 'bg-background border-white/20'
                                         } ${active ? 'scale-110 shadow-lg shadow-primary/30' : ''}`}>
                                         {done ? (
                                             <span className="text-background text-xs font-black">✓</span>
