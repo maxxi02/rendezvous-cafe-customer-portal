@@ -4,12 +4,12 @@ export type QrType = "dine-in" | "walk-in" | "drive-thru";
 
 export type QueueStatus =
   | "pending_payment"
-  | "paid"
-  | "preparing"
-  | "ready"
-  | "served"
-  | "completed"
+  | "queueing"
+  | "serving"
+  | "done"
   | "cancelled";
+
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
 export interface CustomerOrderItem {
   _id: string;
@@ -39,8 +39,19 @@ export interface CustomerOrder {
   total: number;
   timestamp: Date;
 
+  // Payment
   paymentMethod?: "gcash";
-  paymentStatus?: string;
+  paymentStatus?: PaymentStatus;
   paymentReference?: string;
+
+  // Queue
   queueStatus?: QueueStatus;
+
+  // Timestamps
+  createdAt?: Date;
+  paidAt?: Date;
+  queueingAt?: Date;
+  servingAt?: Date;
+  doneAt?: Date;
+  cancelledAt?: Date;
 }
