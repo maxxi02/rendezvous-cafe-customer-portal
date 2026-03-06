@@ -8,7 +8,8 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { orderId, sessionId, amount, customerName, description } = body;
+    const { orderId, sessionId, amount, customerName, email, description } =
+      body;
 
     if (!orderId || !amount) {
       return NextResponse.json(
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
             },
             billing: {
               name: customerName || "Customer",
+              email: email || "guest@rendezvous.com",
             },
             description: description || `Order ${orderId}`,
           },

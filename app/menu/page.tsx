@@ -8,7 +8,9 @@ import { Cart } from './_components/Cart';
 import { CheckoutModal } from './_components/CheckoutModal';
 import { CustomerOrderItem, CustomerOrder } from '@/app/types/order.type';
 import { useSocket } from '../providers/socket-provider';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { authClient } from '@/lib/auth-client';
 
 interface MenuItem {
     _id: string;
@@ -36,10 +38,24 @@ interface SessionData {
     tableId?: string;
     qrType: string;
     isAnonymous: boolean;
+    email?: string;
     lastOrderId?: string;
 }
 
+
 export default function MenuPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-pulse text-white/30 text-sm uppercase tracking-widest font-black">Loading Menu...</div>
+            </div>
+        }>
+            <MenuContent />
+        </Suspense>
+    );
+}
+
+function MenuContent() {
     const { emitCustomerOrder } = useSocket();
     const router = useRouter();
 
@@ -51,6 +67,73 @@ export default function MenuPage() {
     const [showCart, setShowCart] = useState(false);
     const [showCheckout, setShowCheckout] = useState(false);
     const [sessionData, setSessionData] = useState<SessionData | null>(null);
+    const searchParams = useSearchParams();
+
+    const tableIdQuery = searchParams.get('table');
+    const qrTypeQuery = searchParams.get('type');
+
+    // Handle auto-session for QR users
+    useEffect(() => {
+        const initAutoSession = async () => {
+            // If we already have a session, don't re-init
+            if (sessionStorage.getItem("orderSession")) return;
+
+            // Only auto-init if we have a table or type in the URL
+            if (!tableIdQuery && !qrTypeQuery) return;
+
+            try {
+                // 1. Create anonymous session
+                const res = await authClient.signIn.anonymous();
+                if (res.error) {
+                    console.error("Auto-login failed:", res.error);
+                    return;
+                }
+
+                // 2. Fetch table label if tableId exists
+                let tableLabel = "";
+                if (tableIdQuery) {
+                    try {
+                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+                        const tableRes = await fetch(`${apiUrl}/api/tables/${tableIdQuery}`);
+                        if (tableRes.ok) {
+                            const table = await tableRes.json();
+                            tableLabel = table.label;
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch table label", e);
+                    }
+                }
+
+                // 3. Determine display name
+                let automaticName = "Guest";
+                if (tableLabel) automaticName = `Customer ${tableLabel}`;
+                else if (tableIdQuery) automaticName = `Customer ${tableIdQuery.replace("-", " #")}`;
+                else if (qrTypeQuery === "walk-in") automaticName = "Walk-In Customer";
+                else if (qrTypeQuery === "drive-thru") automaticName = "Drive-Thru Customer";
+
+                // 4. Update user name
+                await authClient.updateUser({ name: automaticName });
+
+                // 5. Create order session
+                const newSessionData: SessionData = {
+                    customerName: automaticName,
+                    tableId: tableIdQuery || undefined,
+                    qrType: qrTypeQuery || "dine-in",
+                    isAnonymous: true,
+                    email: "guest@rendezvous.com",
+                };
+
+                sessionStorage.setItem("orderSession", JSON.stringify(newSessionData));
+                setSessionData(newSessionData);
+
+                toast.success(`Welcome! You are ordering as ${automaticName}`);
+            } catch (error) {
+                console.error("Error during auto session init:", error);
+            }
+        };
+
+        initAutoSession();
+    }, [tableIdQuery, qrTypeQuery]);
 
     // Load session data
     useEffect(() => {
@@ -143,17 +226,20 @@ export default function MenuPage() {
         setShowCheckout(false);
         setShowCart(false);
         toast.success('Order placed!', {
-            description: 'The cashier will process your order shortly.',
-            duration: 3000,
+            description: 'Redirecting to payment…',
+            duration: 2000,
         });
 
-        // Save latest order ID to session for the waiting page (optional, but good practice)
+        // Save latest order ID to session for the waiting page
         if (sessionData) {
             sessionData.lastOrderId = order.orderId;
             sessionStorage.setItem("orderSession", JSON.stringify(sessionData));
         }
 
-        router.push('/order/waiting');
+        // NOTE: Do NOT call router.push('/order/waiting') here.
+        // For GCash payments, CheckoutModal handles the redirect to GCash itself
+        // via window.location.href after this function returns.
+        // The /payment/success page then redirects to /order/waiting.
     };
 
     return (

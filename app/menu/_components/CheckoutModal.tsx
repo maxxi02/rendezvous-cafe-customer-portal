@@ -9,6 +9,7 @@ interface SessionData {
     tableId?: string;
     qrType: string;
     isAnonymous: boolean;
+    email?: string;
     sessionId?: string;
 }
 
@@ -34,45 +35,70 @@ export function CheckoutModal({ items, total, onClose, onConfirm, sessionData }:
         setError(null);
 
         try {
-            // 1. Build the order object (will be saved to DB by the server on order:submit)
             const orderId = `customer-${Date.now()}`;
-            const order: CustomerOrder = {
-                orderId,
-                customerName,
-                items,
-                orderNote: orderNote.trim() || undefined,
-                orderType: tableId ? 'dine-in' : 'takeaway',
-                tableNumber: tableId || undefined,
-                subtotal: total,
-                total,
-                timestamp: new Date(),
-            };
+            const effectiveSessionId = sessionId || orderId;
 
-            // 2. Submit the order first via the existing socket flow
-            //    The server saves it as pending_payment until GCash confirms.
-            await onConfirm(order);
-
-            // 3. Create a PayMongo GCash Source to get the redirect URL
-            const res = await fetch('/api/payment/create', {
+            // 1. Synchronously create the order in MongoDB via HTTP.
+            //    This guarantees the order exists BEFORE the PayMongo source is created,
+            //    so the webhook can always find it when it calls /internal/payment-confirmed.
+            const orderRes = await fetch('/api/order/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     orderId,
-                    sessionId: sessionId || orderId,
+                    sessionId: effectiveSessionId,
+                    customerName,
+                    tableId: tableId || undefined,
+                    tableNumber: tableId || undefined,
+                    items,
+                    orderNote: orderNote.trim() || undefined,
+                    orderType: tableId ? 'dine-in' : 'takeaway',
+                    subtotal: total,
+                    total,
+                    timestamp: new Date(),
+                }),
+            });
+
+            const orderData = await orderRes.json();
+
+            if (!orderRes.ok) {
+                throw new Error(orderData?.error || 'Failed to register order');
+            }
+
+            // 2. Create a PayMongo GCash Source.
+            const payRes = await fetch('/api/payment/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId,
+                    sessionId: effectiveSessionId,
                     amount: total,
                     customerName,
+                    email: sessionData?.email || '',
                     description: `Order ${orderId}`,
                 }),
             });
 
-            const data = await res.json();
+            const payData = await payRes.json();
 
-            if (!res.ok || !data.checkoutUrl) {
-                throw new Error(data.error || 'Failed to create GCash payment');
+            if (!payRes.ok || !payData.checkoutUrl) {
+                throw new Error(payData.error || 'Failed to create GCash payment');
             }
 
-            // 4. Redirect to GCash checkout
-            window.location.href = data.checkoutUrl;
+            // 3. Store session info so /payment/success can restore the right room.
+            const stored = sessionStorage.getItem('orderSession');
+            if (stored) {
+                try {
+                    const sess = JSON.parse(stored);
+                    sess.sessionId = effectiveSessionId;
+                    sess.lastOrderId = orderId;
+                    sessionStorage.setItem('orderSession', JSON.stringify(sess));
+                } catch { /* ignore */ }
+            }
+
+            // 4. Redirect to GCash — do NOT call onConfirm here since that
+            //    would trigger router.push('/order/waiting') and kill this redirect.
+            window.location.href = payData.checkoutUrl;
         } catch (err: any) {
             setError(err.message || 'Something went wrong. Please try again.');
             setLoading(false);
