@@ -58,10 +58,29 @@ function triggerVibration() {
 }
 
 // ─── Status configs ──────────────────────────────────────────────────────────
-type OrderStatus = "pending_payment" | "queueing" | "serving" | "done" | string;
+type OrderStatus =
+  | "pending_payment"
+  | "queueing"
+  | "preparing"
+  | "serving"
+  | "done"
+  | string;
 
 function getStatusConfig(status: OrderStatus) {
   switch (status) {
+    case "preparing":
+      return {
+        icon: ChefHat,
+        title: "Chef is Cooking",
+        subtitle: "Your order is being prepared with care!",
+        iconBg: "bg-orange-500/20",
+        iconColor: "text-orange-400",
+        ringColor: "border-orange-500/40",
+        pingColor: "bg-orange-400/30",
+        badge: "👨‍🍳 Preparing",
+        badgeColor:
+          "bg-orange-500/10 text-orange-400 border border-orange-500/30",
+      };
     case "serving":
       return {
         icon: UtensilsCrossed,
@@ -119,6 +138,7 @@ function getStatusConfig(status: OrderStatus) {
 // ─── Step indicator ──────────────────────────────────────────────────────────
 const STEPS: { status: OrderStatus; label: string }[] = [
   { status: "queueing", label: "Received" },
+  { status: "preparing", label: "Preparing" },
   { status: "serving", label: "Serving" },
   { status: "done", label: "Done ✓" },
 ];
@@ -210,6 +230,25 @@ export default function WaitingPage() {
     onOrderStatusChanged,
     offOrderStatusChanged,
   ]);
+
+  const handleOrderAgain = () => {
+    if (!socket || !sessionData) return;
+
+    // Reset session storage to "preparing" instead of clearing it
+    const stored = sessionStorage.getItem("orderSession");
+    if (stored) {
+      try {
+        const session = JSON.parse(stored);
+        session.lastQueueStatus = "preparing";
+        sessionStorage.setItem("orderSession", JSON.stringify(session));
+      } catch (e) {
+        console.error("Failed to update session storage", e);
+      }
+    }
+
+    // Redirect to order page (which redirects to menu)
+    router.replace("/order");
+  };
 
   if (!sessionData) {
     return (
@@ -331,6 +370,15 @@ export default function WaitingPage() {
           >
             {showChat ? "Hide Staff Chat" : "Open Staff Chat"}
           </button>
+
+          {queueStatus === "done" && (
+            <button
+              onClick={handleOrderAgain}
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-white text-background px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-500"
+            >
+              Order Again
+            </button>
+          )}
 
           {showChat && (
             <div className="w-full animate-in slide-in-from-top-4 fade-in duration-300">

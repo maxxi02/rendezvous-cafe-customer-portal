@@ -4,9 +4,14 @@ export type QrType = "dine-in" | "walk-in" | "drive-thru";
 
 export type QueueStatus =
   | "pending_payment"
+  | "paid"
+  | "preparing"
   | "queueing"
   | "serving"
+  | "ready"
+  | "served"
   | "done"
+  | "completed"
   | "cancelled";
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
