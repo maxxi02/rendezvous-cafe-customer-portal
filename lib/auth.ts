@@ -4,6 +4,9 @@ import { anonymous } from "better-auth/plugins";
 import { MONGODB } from "../config/db";
 
 export const auth = betterAuth({
+  advanced: {
+    cookiePrefix: "customer-portal",
+  },
   database: mongodbAdapter(MONGODB),
   baseURL: process.env.API_URL as string,
   plugins: [anonymous()],

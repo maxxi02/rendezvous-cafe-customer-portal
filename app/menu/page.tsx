@@ -96,12 +96,38 @@ function MenuContent() {
 
       try {
         // 1. Ensure anonymous session and get user ID
+        let anonymousUserId: string | undefined = undefined;
         const res = await authClient.signIn.anonymous();
+
         if (res.error) {
-          console.error("Auto-login failed:", res.error);
+          if (
+            res.error.code ===
+              "ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY" ||
+            res.error.status === 400
+          ) {
+            // User is likely already signed in anonymously; try to recover session
+            const sessionRes = await authClient.getSession();
+            if (sessionRes.data?.user) {
+              anonymousUserId = sessionRes.data.user.id;
+            } else {
+              console.error(
+                "Auto-login failed to recover existing session:",
+                sessionRes.error,
+              );
+              return;
+            }
+          } else {
+            console.error("Auto-login failed:", res.error);
+            return;
+          }
+        } else {
+          anonymousUserId = res.data?.user?.id;
+        }
+
+        if (!anonymousUserId) {
+          console.error("No anonymous user ID obtained");
           return;
         }
-        const anonymousUserId = res.data?.user?.id;
 
         // 2. Fetch table info if needed
         let tableLabel = "";
@@ -138,6 +164,24 @@ function MenuContent() {
           );
           setSessionData(unavailableSession);
           return;
+        }
+
+        // --- Occuppy table if a table exists ---
+        if (tableIdQuery) {
+          try {
+            const apiUrl =
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+            await fetch(`${apiUrl}/api/tables`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tableId: tableIdQuery,
+                status: "occupied",
+              }),
+            });
+          } catch (e) {
+            console.error("Failed to occupy table", e);
+          }
         }
 
         // 3. Determine display name
@@ -191,6 +235,31 @@ function MenuContent() {
       }
     }
   }, []);
+
+  // Make table available when exiting the portal
+  useEffect(() => {
+    const handleUnload = () => {
+      if (sessionData?.tableId && !sessionData?.isUnavailable) {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+        // Use keepalive instead of sendBeacon to ensure JSON content type is sent properly
+        fetch(`${apiUrl}/api/tables`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tableId: sessionData.tableId,
+            status: "available",
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, [sessionData]);
 
   // Fetch products
   useEffect(() => {

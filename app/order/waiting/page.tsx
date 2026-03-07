@@ -247,7 +247,12 @@ export default function WaitingPage() {
     }
 
     // Redirect to order page (which redirects to menu)
-    router.replace("/order");
+    let queryArgs = [];
+    if (sessionData.tableId) queryArgs.push(`table=${sessionData.tableId}`);
+    if (sessionData.qrType) queryArgs.push(`type=${sessionData.qrType}`);
+
+    const queryString = queryArgs.length > 0 ? `?${queryArgs.join("&")}` : "";
+    router.replace(`/order${queryString}`);
   };
 
   if (!sessionData) {
