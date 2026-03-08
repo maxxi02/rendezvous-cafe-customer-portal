@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ShoppingCart, Coffee, Utensils } from "lucide-react";
+import { ShoppingCart, Coffee, Utensils, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { MenuCard } from "./_components/MenuCard";
 import { Cart } from "./_components/Cart";
@@ -428,13 +428,22 @@ function MenuContent() {
       {/* Top bar */}
       <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-white/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-white font-black text-2xl uppercase tracking-widest">
-              RENDEZVOUS<span className="text-primary">.</span>
-            </h1>
-            <p className="text-white/40 text-xs tracking-widest uppercase mt-0.5">
-              Our Menu
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push("/")}
+              className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/60 hover:text-white"
+              title="Back to home"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-white font-black text-2xl uppercase tracking-widest">
+                RENDEZVOUS<span className="text-primary">.</span>
+              </h1>
+              <p className="text-white/40 text-xs tracking-widest uppercase mt-0.5">
+                Our Menu
+              </p>
+            </div>
           </div>
 
           {/* Cart button */}

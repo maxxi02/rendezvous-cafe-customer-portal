@@ -2,13 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Send, MessageSquare } from "lucide-react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 import { useSocket } from "@/app/providers/socket-provider";
-
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL ||
-  process.env.SOCKET_URL ||
-  "https://rendezvous-server-gpmv.onrender.com";
 
 interface ChatMessage {
   _id: string;

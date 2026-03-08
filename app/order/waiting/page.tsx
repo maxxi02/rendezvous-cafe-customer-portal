@@ -234,12 +234,12 @@ export default function WaitingPage() {
   const handleOrderAgain = () => {
     if (!socket || !sessionData) return;
 
-    // Reset session storage to "preparing" instead of clearing it
+    // Reset session storage to clear old status
     const stored = sessionStorage.getItem("orderSession");
     if (stored) {
       try {
         const session = JSON.parse(stored);
-        session.lastQueueStatus = "preparing";
+        delete session.lastQueueStatus;
         sessionStorage.setItem("orderSession", JSON.stringify(session));
       } catch (e) {
         console.error("Failed to update session storage", e);
