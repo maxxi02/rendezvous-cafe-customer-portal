@@ -238,17 +238,37 @@ function MenuContent() {
 
   // Make table available when exiting the portal
   useEffect(() => {
+    // Clear the payment redirect flag when this page mounts (e.g. user came back from GCash)
+    sessionStorage.removeItem("isRedirectingToPayment");
+
     const handleUnload = () => {
-      if (sessionData?.tableId && !sessionData?.isUnavailable) {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-        // Use keepalive instead of sendBeacon to ensure JSON content type is sent properly
+      if (!sessionData) return;
+
+      // If the user is being redirected to PayMongo, do NOT delete the anonymous user
+      const isRedirectingToPayment =
+        sessionStorage.getItem("isRedirectingToPayment") === "true";
+      if (isRedirectingToPayment) return;
+
+      const apiUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+
+      if (sessionData.tableId && !sessionData.isUnavailable) {
         fetch(`${apiUrl}/api/tables`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             tableId: sessionData.tableId,
             status: "available",
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+
+      if (sessionData.isAnonymous && sessionData.customerId) {
+        fetch(`${apiUrl}/api/customer/exit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerId: sessionData.customerId,
           }),
           keepalive: true,
         }).catch(() => {});

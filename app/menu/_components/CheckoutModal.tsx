@@ -108,6 +108,7 @@ export function CheckoutModal({
 
       // 4. Redirect to GCash — do NOT call onConfirm here since that
       //    would trigger router.push('/order/waiting') and kill this redirect.
+      sessionStorage.setItem("isRedirectingToPayment", "true");
       window.location.href = payData.checkoutUrl;
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
