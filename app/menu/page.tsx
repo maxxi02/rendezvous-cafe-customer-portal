@@ -289,10 +289,11 @@ function MenuContent() {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/products/categories`,
         );
-        const data: CategoryData[] = await res.json();
-        setCategories(data);
+        const data = await res.json();
+        setCategories(Array.isArray(data) ? data : []);
       } catch {
         toast.error("Failed to load menu");
+        setCategories([]);
       } finally {
         setIsLoading(false);
       }
@@ -302,12 +303,14 @@ function MenuContent() {
 
   // Flatten products
   const allProducts = useMemo(
-    () =>
-      categories.flatMap((cat) =>
+    () => {
+      if (!Array.isArray(categories)) return [];
+      return categories.flatMap((cat) =>
         (cat.products ?? [])
           .filter((p) => p.available)
           .map((p) => ({ ...p, category: cat.name, menuType: cat.menuType })),
-      ),
+      );
+    },
     [categories],
   );
 
