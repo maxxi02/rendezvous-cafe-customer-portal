@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 const PAYMONGO_SECRET = process.env.PAYMONGO_SECRET_KEY || "";
 const SOCKET_SERVER_URL =
   process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8080";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 
 export async function POST(req: NextRequest) {
   try {
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "https://rendezvouscafe.vercel.app";
+    
     const body = await req.json();
     const { orderId, sessionId, amount, customerName, email, description } =
       body;
