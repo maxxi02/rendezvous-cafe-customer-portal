@@ -6,8 +6,11 @@ const SOCKET_SERVER_URL =
 
 export async function POST(req: NextRequest) {
   try {
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "https://rendezvouscafe.vercel.app";
-    
+    const APP_URL =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      req.headers.get("origin") ||
+      "https://rendezvouscafe.vercel.app";
+
     const body = await req.json();
     const { orderId, sessionId, amount, customerName, email, description } =
       body;
