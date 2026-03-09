@@ -302,17 +302,14 @@ function MenuContent() {
   }, []);
 
   // Flatten products
-  const allProducts = useMemo(
-    () => {
-      if (!Array.isArray(categories)) return [];
-      return categories.flatMap((cat) =>
-        (cat.products ?? [])
-          .filter((p) => p.available)
-          .map((p) => ({ ...p, category: cat.name, menuType: cat.menuType })),
-      );
-    },
-    [categories],
-  );
+  const allProducts = useMemo(() => {
+    if (!Array.isArray(categories)) return [];
+    return categories.flatMap((cat) =>
+      (cat.products ?? [])
+        .filter((p) => p.available)
+        .map((p) => ({ ...p, category: cat.name, menuType: cat.menuType })),
+    );
+  }, [categories]);
 
   // Category tabs
   const categoryTabs = useMemo(
