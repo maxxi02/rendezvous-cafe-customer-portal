@@ -58,7 +58,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       sessionId={sessionId}
     >
       {children}
-      <Toaster position="bottom-center" richColors />
+      {/* <Toaster position="" richColors /> */}
     </SocketProvider>
   );
 }
