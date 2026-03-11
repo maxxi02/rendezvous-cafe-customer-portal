@@ -31,7 +31,7 @@ interface CategoryData {
   products: MenuItem[];
 }
 
-import { CustomerChat } from "../order/chat/CustomerChat";
+
 
 interface SessionData {
   customerName: string;
