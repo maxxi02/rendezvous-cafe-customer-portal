@@ -388,10 +388,6 @@ function MenuContent() {
     setCart([]);
     setShowCheckout(false);
     setShowCart(false);
-    toast.success("Order placed!", {
-      description: "Redirecting to payment…",
-      duration: 2000,
-    });
 
     // Save latest order ID to session for the waiting page
     if (sessionData) {
