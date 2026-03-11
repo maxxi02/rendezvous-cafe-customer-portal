@@ -311,11 +311,17 @@ function MenuContent() {
   // Flatten products
   const allProducts = useMemo(() => {
     if (!Array.isArray(categories)) return [];
-    return categories.flatMap((cat) =>
+    const seen = new Map<string, typeof categories[0]["products"][0] & { category: string; menuType: "food" | "drink" }>();
+    categories.forEach((cat) =>
       (cat.products ?? [])
         .filter((p) => p.available)
-        .map((p) => ({ ...p, category: cat.name, menuType: cat.menuType })),
+        .forEach((p) => {
+          if (!seen.has(p._id)) {
+            seen.set(p._id, { ...p, category: cat.name, menuType: cat.menuType });
+          }
+        }),
     );
+    return Array.from(seen.values());
   }, [categories]);
 
   // Category tabs
