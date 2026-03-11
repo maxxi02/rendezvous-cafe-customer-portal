@@ -161,7 +161,13 @@ export function CheckoutModal({
               <span className="text-white/40 text-xs font-bold uppercase tracking-widest">
                 Table
               </span>
-              <span className="text-white font-bold">{tableId}</span>
+              <span className="text-white font-bold">
+                {customerName.startsWith("TABLE-#")
+                  ? customerName.replace("TABLE-", "")
+                  : tableId.match(/\d+/)
+                    ? `#${tableId.match(/\d+/)?.[0]}`
+                    : tableId}
+              </span>
             </div>
           )}
 

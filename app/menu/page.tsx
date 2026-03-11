@@ -186,12 +186,17 @@ function MenuContent() {
 
         // 3. Determine display name
         let automaticName = "Guest";
-        if (tableLabel) automaticName = `Customer ${tableLabel}`;
-        else if (tableIdQuery)
-          automaticName = `Customer ${tableIdQuery.replace("-", " #")}`;
-        else if (qrTypeQuery === "walk-in") automaticName = "Walk-In Customer";
-        else if (qrTypeQuery === "drive-thru")
+        if (tableLabel) {
+          automaticName = `TABLE-#${tableLabel}`;
+        } else if (tableIdQuery) {
+          const numMatch = tableIdQuery.match(/\d+/);
+          const num = numMatch ? numMatch[0] : tableIdQuery;
+          automaticName = `TABLE-#${num}`;
+        } else if (qrTypeQuery === "walk-in") {
+          automaticName = "Walk-In Customer";
+        } else if (qrTypeQuery === "drive-thru") {
           automaticName = "Drive-Thru Customer";
+        }
 
         // 4. Update user name
         await authClient.updateUser({ name: automaticName });
