@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ShoppingCart, Coffee, Utensils, ArrowLeft } from "lucide-react";
+import { ShoppingCart, Coffee, Utensils, ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { MenuCard } from "./_components/MenuCard";
 import { Cart } from "./_components/Cart";
@@ -62,7 +62,7 @@ export default function MenuPage() {
 }
 
 function MenuContent() {
-  const { emitCustomerOrder } = useSocket();
+  const { emitCustomerOrder, onShopStatusChanged, offShopStatusChanged } = useSocket();
   const router = useRouter();
   const { data: authSession } = authClient.useSession();
 
@@ -76,6 +76,8 @@ function MenuContent() {
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  // null = loading, true = open, false = closed
+  const [isShopOpen, setIsShopOpen] = useState<boolean | null>(null);
   const searchParams = useSearchParams();
 
   const tableIdQuery = searchParams.get("table");
@@ -235,6 +237,39 @@ function MenuContent() {
 
     initAutoSession();
   }, [tableIdQuery, qrTypeQuery]);
+
+  // ─── Fetch shop status on mount ────────────────────────────────────────────
+  useEffect(() => {
+    const checkShopStatus = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+        const res = await fetch(`${apiUrl}/api/shop-status`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsShopOpen(data.isOpen ?? true);
+        } else {
+          setIsShopOpen(true); // default open on error
+        }
+      } catch {
+        setIsShopOpen(true); // default open on error
+      }
+    };
+    checkShopStatus();
+  }, []);
+
+  // ─── Real-time shop status updates ─────────────────────────────────────────
+  useEffect(() => {
+    const handleShopStatus = ({ isOpen }: { isOpen: boolean }) => {
+      setIsShopOpen(isOpen);
+      if (!isOpen) {
+        toast.error("The shop has closed. Ordering is no longer available.");
+      } else {
+        toast.success("The shop is now open! You can place your order.");
+      }
+    };
+    onShopStatusChanged(handleShopStatus);
+    return () => offShopStatusChanged(handleShopStatus);
+  }, [onShopStatusChanged, offShopStatusChanged]);
 
   // Load session data
   useEffect(() => {
@@ -431,6 +466,34 @@ function MenuContent() {
             className="w-full bg-white text-black py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all active:scale-95"
           >
             Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Shop closed blocking screen
+  if (isShopOpen === false) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white/5 p-10 rounded-3xl border border-white/10 max-w-md w-full backdrop-blur-sm">
+          <div className="w-24 h-24 bg-white/10 flex items-center justify-center rounded-2xl mx-auto mb-6">
+            <Lock className="w-12 h-12 text-white/60" />
+          </div>
+          <h2 className="text-white text-3xl font-black uppercase tracking-widest mb-3">
+            Shop Closed
+          </h2>
+          <p className="text-white/50 text-sm leading-relaxed mb-2">
+            We&apos;re not accepting orders right now.
+          </p>
+          <p className="text-white/30 text-xs leading-relaxed mb-10">
+            Please wait for a staff member to open the register, or come back later.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-white/10 text-white/80 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all active:scale-95 border border-white/10"
+          >
+            Check Again
           </button>
         </div>
       </div>

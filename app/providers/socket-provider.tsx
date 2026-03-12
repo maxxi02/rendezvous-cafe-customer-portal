@@ -52,6 +52,11 @@ export interface AttendanceStatusChangedData {
     status: string;
 }
 
+export interface ShopStatusChangedData {
+    isOpen: boolean;
+    updatedBy?: string;
+}
+
 export interface CustomerOrderItem {
     _id: string;
     name: string;
@@ -126,6 +131,10 @@ interface SocketContextValue {
     offOrderSubmitted: (cb?: (data: OrderSubmittedPayload) => void) => void;
     onOrderStatusChanged: (cb: (data: OrderStatusChangedPayload) => void) => void;
     offOrderStatusChanged: (cb?: (data: OrderStatusChangedPayload) => void) => void;
+
+    // ─── Shop status listeners ────────────────────────────────────
+    onShopStatusChanged: (cb: (data: ShopStatusChangedData) => void) => void;
+    offShopStatusChanged: (cb?: (data: ShopStatusChangedData) => void) => void;
 }
 
 const SocketContext = createContext<SocketContextValue>({
@@ -153,6 +162,8 @@ const SocketContext = createContext<SocketContextValue>({
     offOrderSubmitted: () => { },
     onOrderStatusChanged: () => { },
     offOrderStatusChanged: () => { },
+    onShopStatusChanged: () => { },
+    offShopStatusChanged: () => { },
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -367,6 +378,11 @@ export function SocketProvider({
     const offOrderStatusChanged = (cb?: (data: OrderStatusChangedPayload) => void) =>
         socketRef.current?.off('order:status:changed', cb);
 
+    const onShopStatusChanged = (cb: (data: ShopStatusChangedData) => void) =>
+        socketRef.current?.on('shop:status', cb);
+    const offShopStatusChanged = (cb?: (data: ShopStatusChangedData) => void) =>
+        socketRef.current?.off('shop:status', cb);
+
     return (
         <SocketContext.Provider
             value={{
@@ -394,6 +410,8 @@ export function SocketProvider({
                 offOrderSubmitted,
                 onOrderStatusChanged,
                 offOrderStatusChanged,
+                onShopStatusChanged,
+                offShopStatusChanged,
             }}
         >
             {children}
