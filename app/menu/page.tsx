@@ -64,6 +64,7 @@ export default function MenuPage() {
 function MenuContent() {
   const { emitCustomerOrder } = useSocket();
   const router = useRouter();
+  const { data: authSession } = authClient.useSession();
 
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,37 +96,39 @@ function MenuContent() {
       if (currentSession?.customerId && !tableIdQuery && !qrTypeQuery) return;
 
       try {
-        // 1. Ensure anonymous session and get user ID
-        let anonymousUserId: string | undefined = undefined;
-        const res = await authClient.signIn.anonymous();
+        // 1. Check existing session and only sign in anonymously if needed
+        let userId: string | undefined = authSession?.user?.id;
+        let isAnonymous = !!authSession?.user?.isAnonymous;
 
-        if (res.error) {
-          if (
-            res.error.code ===
-            "ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY" ||
-            res.error.status === 400
-          ) {
-            // User is likely already signed in anonymously; try to recover session
-            const sessionRes = await authClient.getSession();
-            if (sessionRes.data?.user) {
-              anonymousUserId = sessionRes.data.user.id;
+        if (!userId) {
+          const res = await authClient.signIn.anonymous();
+
+          if (res.error) {
+            if (
+              res.error.code ===
+              "ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY" ||
+              res.error.status === 400
+            ) {
+              const sessionRes = await authClient.getSession();
+              if (sessionRes.data?.user) {
+                userId = sessionRes.data.user.id;
+                isAnonymous = !!sessionRes.data.user.isAnonymous;
+              } else {
+                console.error("Auto-login failed to recover session:", sessionRes.error);
+                return;
+              }
             } else {
-              console.error(
-                "Auto-login failed to recover existing session:",
-                sessionRes.error,
-              );
+              console.error("Auto-login failed:", res.error);
               return;
             }
           } else {
-            console.error("Auto-login failed:", res.error);
-            return;
+            userId = res.data?.user?.id;
+            isAnonymous = true;
           }
-        } else {
-          anonymousUserId = res.data?.user?.id;
         }
 
-        if (!anonymousUserId) {
-          console.error("No anonymous user ID obtained");
+        if (!userId) {
+          console.error("No user ID obtained after auth check");
           return;
         }
 
@@ -156,7 +159,7 @@ function MenuContent() {
             qrType: qrTypeQuery || "dine-in",
             isAnonymous: true,
             isUnavailable: true,
-            customerId: anonymousUserId,
+            customerId: userId,
           };
           sessionStorage.setItem(
             "orderSession",
@@ -200,18 +203,20 @@ function MenuContent() {
           automaticName = "Drive-Thru Customer";
         }
 
-        // 4. Update user name
-        await authClient.updateUser({ name: automaticName });
+        // 4. Update user name (only if it's still generic/guest)
+        if (isAnonymous || !authSession?.user?.name) {
+          await authClient.updateUser({ name: automaticName });
+        }
 
         // 5. Create/Update order session
         const newSessionData: SessionData = {
           ...currentSession,
-          customerName: automaticName,
+          customerName: isAnonymous || !authSession?.user?.name ? automaticName : authSession.user.name,
           tableId: tableIdQuery || currentSession?.tableId || undefined,
           qrType: qrTypeQuery || currentSession?.qrType || "dine-in",
-          isAnonymous: true,
-          email: "guest@rendezvous.com",
-          customerId: anonymousUserId,
+          isAnonymous: isAnonymous,
+          email: authSession?.user?.email || "guest@rendezvous.com",
+          customerId: userId,
           sessionId:
             currentSession?.sessionId ||
             `sess-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -221,7 +226,7 @@ function MenuContent() {
         setSessionData(newSessionData);
 
         if (!stored) {
-          toast.success(`Welcome! You are ordering as ${automaticName}`);
+          toast.success(`Welcome! You are ordering as ${newSessionData.customerName}`);
         }
       } catch (error) {
         console.error("Error during auto session init:", error);
