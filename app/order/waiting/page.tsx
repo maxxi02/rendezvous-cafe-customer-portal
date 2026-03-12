@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { CustomerChat } from "../chat/CustomerChat";
 import { useSocket } from "../../providers/socket-provider";
+import { useSession } from "@/lib/auth-client";
+import { RatingModal } from "./_components/RatingModal";
 
 interface SessionData {
   customerName: string;
@@ -150,17 +152,24 @@ function getStepIndex(status: OrderStatus): number {
 
 export default function WaitingPage() {
   const router = useRouter();
+  const { data: authSession } = useSession();
   const {
     socket,
     onOrderSubmitted,
     onOrderStatusChanged,
     offOrderSubmitted,
     offOrderStatusChanged,
+    emitCustomerMarkDone,
   } = useSocket();
+
+  // True only for real Google-authenticated users
+  const isGoogleUser = !!(authSession?.user && !(authSession.user as any).isAnonymous);
 
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [queueStatus, setQueueStatus] = useState<OrderStatus>("queueing");
+  const [isMarkingDone, setIsMarkingDone] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const prevStatusRef = useRef<OrderStatus>("queueing");
 
   // Load session
@@ -213,6 +222,11 @@ export default function WaitingPage() {
         triggerVibration();
       }
 
+      // Show rating modal when order is done
+      if (newStatus === "done" && prevStatusRef.current !== "done") {
+        setShowRatingModal(true);
+      }
+
       prevStatusRef.current = newStatus;
     };
 
@@ -230,6 +244,16 @@ export default function WaitingPage() {
     onOrderStatusChanged,
     offOrderStatusChanged,
   ]);
+
+
+
+  const handleMarkDone = () => {
+    if (!sessionData?.lastOrderId || isMarkingDone) return;
+    setIsMarkingDone(true);
+    emitCustomerMarkDone(sessionData.lastOrderId);
+    // Reset loading after a timeout in case the server doesn't respond
+    setTimeout(() => setIsMarkingDone(false), 5000);
+  };
 
   const handleOrderAgain = () => {
     if (!socket || !sessionData) return;
@@ -271,6 +295,15 @@ export default function WaitingPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-10 p-6 overflow-x-hidden">
       {/* Ambient glow */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
+      {/* Rating modal overlay */}
+      {showRatingModal && sessionData?.lastOrderId && (
+        <RatingModal
+          orderId={sessionData.lastOrderId}
+          isGoogleUser={isGoogleUser}
+          onClose={() => setShowRatingModal(false)}
+        />
+      )}
 
       <div className="relative z-10 max-w-md w-full space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
         {/* Brand */}
@@ -375,6 +408,16 @@ export default function WaitingPage() {
           >
             {showChat ? "Hide Staff Chat" : "Open Staff Chat"}
           </button>
+
+          {queueStatus === "serving" && (
+            <button
+              onClick={handleMarkDone}
+              disabled={isMarkingDone}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest border border-emerald-500/30 transition-all active:scale-95 disabled:opacity-50 animate-in fade-in zoom-in duration-500"
+            >
+              {isMarkingDone ? "Confirming…" : "✓ Mark as Done"}
+            </button>
+          )}
 
           {queueStatus === "done" && (
             <button

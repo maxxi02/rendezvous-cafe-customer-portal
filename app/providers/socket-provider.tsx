@@ -125,6 +125,7 @@ interface SocketContextValue {
     // ─── Order emitters ───────────────────────────────────────────
     emitPosJoin: () => void;
     emitCustomerOrder: (order: CustomerOrder) => void;
+    emitCustomerMarkDone: (orderId: string) => void;
 
     // ─── Order listeners ──────────────────────────────────────────
     onNewCustomerOrder: (cb: (order: CustomerOrder) => void) => void;
@@ -159,6 +160,7 @@ const SocketContext = createContext<SocketContextValue>({
     offAttendanceStatusChanged: () => { },
     emitPosJoin: () => { },
     emitCustomerOrder: () => { },
+    emitCustomerMarkDone: () => { },
     onNewCustomerOrder: () => { },
     offNewCustomerOrder: () => { },
     onOrderSubmitted: () => { },
@@ -381,6 +383,10 @@ export function SocketProvider({
         socket.emit('order:submit', orderWithSession);
     };
 
+    const emitCustomerMarkDone = (orderId: string) => {
+        socketRef.current?.emit('order:customer:done', { orderId });
+    };
+
     const onNewCustomerOrder = (cb: (order: CustomerOrder) => void) =>
         socketRef.current?.on('order:new', cb);
 
@@ -423,6 +429,7 @@ export function SocketProvider({
                 offAttendanceStatusChanged,
                 emitPosJoin,
                 emitCustomerOrder,
+                emitCustomerMarkDone,
                 onNewCustomerOrder,
                 offNewCustomerOrder,
                 onOrderSubmitted,
