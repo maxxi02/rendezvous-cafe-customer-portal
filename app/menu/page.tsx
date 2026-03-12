@@ -31,7 +31,7 @@ interface CategoryData {
   products: MenuItem[];
 }
 
-import { CustomerChat } from "../order/chat/CustomerChat";
+
 
 interface SessionData {
   customerName: string;
@@ -102,7 +102,7 @@ function MenuContent() {
         if (res.error) {
           if (
             res.error.code ===
-              "ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY" ||
+            "ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY" ||
             res.error.status === 400
           ) {
             // User is likely already signed in anonymously; try to recover session
@@ -186,12 +186,19 @@ function MenuContent() {
 
         // 3. Determine display name
         let automaticName = "Guest";
-        if (tableLabel) automaticName = `Customer ${tableLabel}`;
-        else if (tableIdQuery)
-          automaticName = `Customer ${tableIdQuery.replace("-", " #")}`;
-        else if (qrTypeQuery === "walk-in") automaticName = "Walk-In Customer";
-        else if (qrTypeQuery === "drive-thru")
+        if (tableLabel) {
+          const numMatch = tableLabel.match(/\d+/);
+          const num = numMatch ? numMatch[0] : tableLabel;
+          automaticName = `TABLE-#${num}`;
+        } else if (tableIdQuery) {
+          const numMatch = tableIdQuery.match(/\d+/);
+          const num = numMatch ? numMatch[0] : tableIdQuery;
+          automaticName = `TABLE-#${num}`;
+        } else if (qrTypeQuery === "walk-in") {
+          automaticName = "Walk-In Customer";
+        } else if (qrTypeQuery === "drive-thru") {
           automaticName = "Drive-Thru Customer";
+        }
 
         // 4. Update user name
         await authClient.updateUser({ name: automaticName });
@@ -260,7 +267,7 @@ function MenuContent() {
             status: "available",
           }),
           keepalive: true,
-        }).catch(() => {});
+        }).catch(() => { });
       }
 
       if (sessionData.isAnonymous && sessionData.customerId) {
@@ -271,7 +278,7 @@ function MenuContent() {
             customerId: sessionData.customerId,
           }),
           keepalive: true,
-        }).catch(() => {});
+        }).catch(() => { });
       }
     };
 
@@ -304,11 +311,17 @@ function MenuContent() {
   // Flatten products
   const allProducts = useMemo(() => {
     if (!Array.isArray(categories)) return [];
-    return categories.flatMap((cat) =>
+    const seen = new Map<string, typeof categories[0]["products"][0] & { category: string; menuType: "food" | "drink" }>();
+    categories.forEach((cat) =>
       (cat.products ?? [])
         .filter((p) => p.available)
-        .map((p) => ({ ...p, category: cat.name, menuType: cat.menuType })),
+        .forEach((p) => {
+          if (!seen.has(p._id)) {
+            seen.set(p._id, { ...p, category: cat.name, menuType: cat.menuType });
+          }
+        }),
     );
+    return Array.from(seen.values());
   }, [categories]);
 
   // Category tabs
@@ -381,10 +394,6 @@ function MenuContent() {
     setCart([]);
     setShowCheckout(false);
     setShowCart(false);
-    toast.success("Order placed!", {
-      description: "Redirecting to payment…",
-      duration: 2000,
-    });
 
     // Save latest order ID to session for the waiting page
     if (sessionData) {
@@ -476,11 +485,10 @@ function MenuContent() {
                 setSelectedMenuType(type);
                 setSelectedCategory("All");
               }}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest border transition-all duration-200 ${
-                selectedMenuType === type
-                  ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
-                  : "bg-transparent text-white/60 border-white/20 hover:border-white/40 hover:text-white"
-              }`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest border transition-all duration-200 ${selectedMenuType === type
+                ? "bg-primary text-background border-primary shadow-lg shadow-primary/20"
+                : "bg-transparent text-white/60 border-white/20 hover:border-white/40 hover:text-white"
+                }`}
             >
               {type === "food" && <Utensils className="w-3.5 h-3.5" />}
               {type === "drink" && <Coffee className="w-3.5 h-3.5" />}
@@ -499,11 +507,10 @@ function MenuContent() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border transition-all duration-200 shrink-0 ${
-                selectedCategory === cat
-                  ? "bg-white/15 text-white border-white/30"
-                  : "bg-transparent text-white/40 border-white/10 hover:text-white/70 hover:border-white/20"
-              }`}
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border transition-all duration-200 shrink-0 ${selectedCategory === cat
+                ? "bg-white/15 text-white border-white/30"
+                : "bg-transparent text-white/40 border-white/10 hover:text-white/70 hover:border-white/20"
+                }`}
             >
               {cat}
             </button>

@@ -100,14 +100,6 @@ interface SocketContextValue {
     emitOnline: () => void;
     emitActivity: () => void;
 
-    // ─── Chat emitters ────────────────────────────────────────────
-    emitChatConversationsLoad: () => void;
-    emitChatMessagesLoad: (conversationId: string, cursor?: string) => void;
-    emitChatMessageSend: (conversationId: string, content: string) => void;
-    emitChatDirectGetOrCreate: (targetUserId: string, targetUserName: string, targetUserAvatar?: string) => void;
-    emitChatTypingUpdate: (conversationId: string, isTyping: boolean) => void;
-    emitChatMessagesRead: (conversationId: string) => void;
-
     // ─── Status listeners ─────────────────────────────────────────
     onStatusChanged: (cb: (data: UserStatusUpdate) => void) => void;
     offStatusChanged: (cb?: (data: UserStatusUpdate) => void) => void;
@@ -142,12 +134,6 @@ const SocketContext = createContext<SocketContextValue>({
     isActive: true,
     emitOnline: () => { },
     emitActivity: () => { },
-    emitChatConversationsLoad: () => { },
-    emitChatMessagesLoad: () => { },
-    emitChatMessageSend: () => { },
-    emitChatDirectGetOrCreate: () => { },
-    emitChatTypingUpdate: () => { },
-    emitChatMessagesRead: () => { },
     onStatusChanged: () => { },
     offStatusChanged: () => { },
     onActivityUpdated: () => { },
@@ -241,7 +227,6 @@ export function SocketProvider({
             setIsConnected(true);
             if (userId) socket.emit("user:online");
             joinSessionRoom(); // Re-join after reconnect
-            socket.emit("chat:conversations:load");
             console.log("🔄 Reconnected after", attemptNumber, "attempts");
         });
 
@@ -320,27 +305,6 @@ export function SocketProvider({
     const emitActivity = () => {
         if (socketRef.current?.connected) socketRef.current.emit("user:activity");
     };
-    const emitChatConversationsLoad = () =>
-        socketRef.current?.emit("chat:conversations:load");
-    const emitChatMessagesLoad = (conversationId: string, cursor?: string) =>
-        socketRef.current?.emit("chat:messages:load", { conversationId, cursor });
-    const emitChatMessageSend = (conversationId: string, content: string) =>
-        socketRef.current?.emit("chat:message:send", { conversationId, content });
-    const emitChatDirectGetOrCreate = (
-        targetUserId: string,
-        targetUserName: string,
-        targetUserAvatar?: string,
-    ) =>
-        socketRef.current?.emit("chat:direct:get-or-create", {
-            targetUserId,
-            targetUserName,
-            targetUserAvatar: targetUserAvatar ?? "",
-        });
-    const emitChatTypingUpdate = (conversationId: string, isTyping: boolean) =>
-        socketRef.current?.emit("chat:typing:update", { conversationId, isTyping });
-    const emitChatMessagesRead = (conversationId: string) =>
-        socketRef.current?.emit("chat:messages:read", { conversationId });
-
     // ─── Listeners ────────────────────────────────────────────────
 
     const onStatusChanged = (cb: (data: UserStatusUpdate) => void) =>
@@ -411,12 +375,6 @@ export function SocketProvider({
                 isActive,
                 emitOnline,
                 emitActivity,
-                emitChatConversationsLoad,
-                emitChatMessagesLoad,
-                emitChatMessageSend,
-                emitChatDirectGetOrCreate,
-                emitChatTypingUpdate,
-                emitChatMessagesRead,
                 onStatusChanged,
                 offStatusChanged,
                 onActivityUpdated,

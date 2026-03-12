@@ -9,7 +9,6 @@ import {
   Loader2,
   Package,
 } from "lucide-react";
-import { CustomerChat } from "../chat/CustomerChat";
 import { useSocket } from "../../providers/socket-provider";
 import { useSession } from "@/lib/auth-client";
 import { RatingModal } from "./_components/RatingModal";
@@ -166,7 +165,6 @@ export default function WaitingPage() {
   const isGoogleUser = !!(authSession?.user && !(authSession.user as any).isAnonymous);
 
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [showChat, setShowChat] = useState(false);
   const [queueStatus, setQueueStatus] = useState<OrderStatus>("queueing");
   const [isMarkingDone, setIsMarkingDone] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -244,8 +242,6 @@ export default function WaitingPage() {
     onOrderStatusChanged,
     offOrderStatusChanged,
   ]);
-
-
 
   const handleMarkDone = () => {
     if (!sessionData?.lastOrderId || isMarkingDone) return;
@@ -400,15 +396,8 @@ export default function WaitingPage() {
           </div>
         </div>
 
-        {/* Chat toggle */}
+        {/* Actions */}
         <div className="flex flex-col items-center gap-3">
-          <button
-            onClick={() => setShowChat(!showChat)}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10 transition-all active:scale-95"
-          >
-            {showChat ? "Hide Staff Chat" : "Open Staff Chat"}
-          </button>
-
           {queueStatus === "serving" && (
             <button
               onClick={handleMarkDone}
@@ -426,19 +415,6 @@ export default function WaitingPage() {
             >
               Order Again
             </button>
-          )}
-
-          {showChat && (
-            <div className="w-full animate-in slide-in-from-top-4 fade-in duration-300">
-              <CustomerChat
-                sessionId={
-                  sessionData.tableId ||
-                  "guest-session-" + sessionData.customerName
-                }
-                customerName={sessionData.customerName}
-                tableId={sessionData.tableId}
-              />
-            </div>
           )}
         </div>
       </div>

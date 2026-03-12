@@ -15,6 +15,10 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     if (!orderId) return;
 
+    // Play notification sound
+    const audio = new Audio("/order-notification.mp3");
+    audio.play().catch((err) => console.error("Audio playback failed:", err));
+
     // Confirm payment immediately — this fires as soon as GCash redirects back.
     // It acts as a reliable fallback to the PayMongo webhook (which cannot
     // reach localhost in dev, and may occasionally be delayed in production).
