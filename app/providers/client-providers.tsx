@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
+import { useAnonymousSession } from "@/lib/use-anonymous-session";
 import { SocketProvider } from "./socket-provider";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
@@ -16,6 +17,7 @@ interface SessionData {
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   const { data: session, isPending } = useSession();
+  const { user: anonUser, isLoading: isAnonLoading } = useAnonymousSession();
   const [sessionId, setSessionId] = useState<string | undefined>();
 
   // Grab the session data from sessionStorage to figure out our room
@@ -46,14 +48,17 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [sessionId, session]); // depend on session so it might re-run after they log in
 
-  if (isPending) {
+  if (isPending || isAnonLoading) {
     return null; // Or a minimal loading state while we check auth
   }
 
+  const effectiveUserId = session?.user?.id || anonUser?.id;
+  const effectiveUserName = session?.user?.name || anonUser?.name || "Guest";
+
   return (
     <SocketProvider
-      userId={session?.user?.id}
-      userName={session?.user?.name || "Guest"}
+      userId={effectiveUserId}
+      userName={effectiveUserName}
       userAvatar={session?.user?.image ?? undefined}
       sessionId={sessionId}
     >

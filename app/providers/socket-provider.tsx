@@ -350,10 +350,10 @@ export function SocketProvider({
     const emitCustomerOrder = (order: CustomerOrder) => {
         const socket = socketRef.current;
         if (!socket) return;
-        // Inject socket.id as sessionId so the server can route status updates back
+        // Output order status updates to the persistent sessionId so it survives GCash redirects
         const orderWithSession = {
             ...order,
-            sessionId: socket.id,
+            sessionId: sessionId || socket.id,
         };
         socket.emit('order:submit', orderWithSession);
     };
