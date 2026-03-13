@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ShoppingBag, Menu, X, Coffee } from "lucide-react";
-import { signIn } from "@/lib/auth-client";
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession, signOut, signIn } from "@/lib/auth-client";
 import Image from "next/image";
 
 function NavActions({ openAuth }: { openAuth: () => void }) {
@@ -188,6 +188,7 @@ const navLinks = [
 
 // ─── Navbar ────────────────────────────────────────────────────────────────────
 export default function Navbar() {
+    const pathname = usePathname();
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [authOpen, setAuthOpen] = useState(false);
@@ -225,12 +226,12 @@ export default function Navbar() {
                             <Link
                                 key={link.label}
                                 href={link.href}
-                                className={`relative pb-1 transition-colors duration-300 hover:text-primary group ${link.label === "Home" ? "text-primary" : "text-white/80"
+                                className={`relative pb-1 transition-colors duration-300 hover:text-primary group ${pathname === link.href ? "text-primary" : "text-white/80"
                                     }`}
                             >
                                 {link.label}
                                 <span
-                                    className={`absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-300 ${link.label === "Home" ? "w-full" : "w-0 group-hover:w-full"
+                                    className={`absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-300 ${pathname === link.href ? "w-full" : "w-0 group-hover:w-full"
                                         }`}
                                 />
                             </Link>
@@ -280,7 +281,8 @@ export default function Navbar() {
                             key={link.label}
                             href={link.href}
                             onClick={() => setMobileOpen(false)}
-                            className="text-2xl font-black uppercase tracking-widest text-white hover:text-primary transition-colors duration-300 border-b border-white/10 pb-4"
+                            className={`text-2xl font-black uppercase tracking-widest hover:text-primary transition-colors duration-300 border-b border-white/10 pb-4 ${pathname === link.href ? "text-primary" : "text-white"
+                                }`}
                         >
                             {link.label}
                         </Link>
