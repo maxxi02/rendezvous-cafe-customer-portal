@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { MONGODB } from "@/config/db";
+import { verifyAnonymousSession } from "@/lib/anonymous-session";
 
 /**
  * POST /api/order/rate
@@ -14,6 +15,7 @@ export async function POST(request: NextRequest) {
     // ── Auth gate ─────────────────────────────────────────────────────────
     const session = await auth.api.getSession({ headers: request.headers });
 
+    // Check if user is authenticated with Google
     if (!session?.user) {
       return NextResponse.json(
         { error: "Authentication required" },
@@ -21,12 +23,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reject anonymous (guest) users — only Google-authenticated customers can rate
-    if ((session.user as any).isAnonymous) {
-      return NextResponse.json(
-        { error: "Please sign in with Google to rate your order" },
-        { status: 403 },
-      );
+    // Check if user is an anonymous session user (not logged in)
+    const anonymousToken = request.cookies.get("anonymous-session")?.value;
+    if (anonymousToken) {
+      const anonymousUser = await verifyAnonymousSession(anonymousToken);
+      if (anonymousUser) {
+        return NextResponse.json(
+          { error: "Please sign in with Google to rate your order" },
+          { status: 403 },
+        );
+      }
     }
 
     // ── Validate body ─────────────────────────────────────────────────────
