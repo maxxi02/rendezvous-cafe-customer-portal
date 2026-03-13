@@ -1,10 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { anonymous } from "better-auth/plugins";
 import { MONGODB } from "../config/db";
-
-// In-memory storage for anonymous users
-const anonymousUsersMemory = new Map<string, any>();
 
 export const auth = betterAuth({
   advanced: {
@@ -12,7 +8,7 @@ export const auth = betterAuth({
   },
   database: mongodbAdapter(MONGODB),
   baseURL: process.env.API_URL as string,
-  plugins: [anonymous()],
+  plugins: [],
   trustedOrigins: [
     "http://localhost:3000",
     "http://localhost:3001",
@@ -45,5 +41,3 @@ export const auth = betterAuth({
     },
   },
 });
-
-export { anonymousUsersMemory };
