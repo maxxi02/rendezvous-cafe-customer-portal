@@ -13,8 +13,10 @@ export default function PaymentSuccessPage() {
   const sessionId = params.get("sessionId");
 
   useEffect(() => {
+    console.log("[payment/success] Page loaded", { orderId, sessionId });
+
     if (!orderId) {
-      // No orderId, redirect to menu
+      console.log("[payment/success] No orderId, redirecting to menu");
       router.replace("/menu");
       return;
     }
@@ -23,17 +25,22 @@ export default function PaymentSuccessPage() {
     const audio = new Audio("/order-notification.mp3");
     audio.play().catch((err) => console.error("Audio playback failed:", err));
 
-    // Confirm payment immediately — this fires as soon as GCash redirects back.
-    // It acts as a reliable fallback to the PayMongo webhook (which cannot
-    // reach localhost in dev, and may occasionally be delayed in production).
+    // Confirm payment immediately
+    console.log("[payment/success] Confirming payment for orderId:", orderId);
     fetch("/api/payment/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId }),
-    }).catch((err) => console.error("[payment/success] confirm error:", err));
+    })
+      .then((res) => {
+        console.log("[payment/success] Payment confirm response:", res.status);
+        return res.json();
+      })
+      .then((data) => console.log("[payment/success] Payment confirm data:", data))
+      .catch((err) => console.error("[payment/success] confirm error:", err));
 
     if (sessionId) {
-      // Restore sessionId so /order/waiting can join the right socket room
+      console.log("[payment/success] Updating session with sessionId:", sessionId);
       const stored = sessionStorage.getItem("orderSession");
       if (stored) {
         try {
@@ -41,15 +48,19 @@ export default function PaymentSuccessPage() {
           session.sessionId = sessionId;
           session.lastOrderId = orderId;
           sessionStorage.setItem("orderSession", JSON.stringify(session));
-        } catch {
-          /* ignore */
+          console.log("[payment/success] Session updated:", session);
+        } catch (e) {
+          console.error("[payment/success] Failed to update session:", e);
         }
+      } else {
+        console.log("[payment/success] No orderSession in sessionStorage");
       }
     }
 
     // Short delay to allow confirmation to propagate, then navigate to tracking
+    console.log("[payment/success] Scheduling redirect to /order/waiting in 1500ms");
     const t = setTimeout(() => {
-      // Use push instead of replace to ensure proper navigation
+      console.log("[payment/success] Redirecting to /order/waiting");
       router.push("/order/waiting");
     }, 1500);
 

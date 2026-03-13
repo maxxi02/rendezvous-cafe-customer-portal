@@ -9,14 +9,20 @@ function OrderRedirect() {
     const pathname = usePathname();
 
     useEffect(() => {
+        console.log("[order/page] Mounted with pathname:", pathname);
+
         // Don't redirect if we're on a sub-route like /order/waiting
         if (pathname !== "/order") {
+            console.log("[order/page] Not on /order, skipping redirect. Current path:", pathname);
             return;
         }
 
+        console.log("[order/page] On /order, redirecting to /menu");
         // Redirect to menu with all existing search params
         const params = searchParams.toString();
-        router.replace(`/menu${params ? `?${params}` : ""}`);
+        const targetUrl = `/menu${params ? `?${params}` : ""}`;
+        console.log("[order/page] Target URL:", targetUrl);
+        router.replace(targetUrl);
     }, [router, searchParams, pathname]);
 
     return (
