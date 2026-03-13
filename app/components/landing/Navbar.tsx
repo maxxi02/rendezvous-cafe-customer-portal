@@ -49,6 +49,37 @@ function NavActions({ openAuth }: { openAuth: () => void }) {
     );
 }
 
+function MobileNavActions({ openAuth, closeMenu }: { openAuth: () => void, closeMenu: () => void }) {
+    const { data: session, isPending } = useSession();
+
+    if (isPending) return (
+        <div className="w-full h-12 rounded-full bg-white/10 animate-pulse mt-4" />
+    );
+
+    if (session?.user) {
+        return (
+            <button
+                onClick={() => {
+                    signOut();
+                    closeMenu();
+                }}
+                className="border border-red-500/50 text-red-400 px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:bg-red-500/10 hover:border-red-400 transition-all duration-300 mt-4"
+            >
+                Log Out
+            </button>
+        );
+    }
+
+    return (
+        <button
+            onClick={openAuth}
+            className="border border-white/20 text-white/80 px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:border-primary hover:text-primary transition-all duration-300 mt-4"
+        >
+            Log In
+        </button>
+    );
+}
+
 
 // ─── Google Icon ───────────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -153,7 +184,6 @@ function AuthModal({ isOpen, onClose }: AuthModalProps) {
 const navLinks = [
     { label: "Home", href: "/" },
     { label: "Coffee", href: "/coffee" },
-    { label: "Menu", href: "/menu" },
 ];
 
 // ─── Navbar ────────────────────────────────────────────────────────────────────
@@ -258,12 +288,10 @@ export default function Navbar() {
 
                     {/* Mobile auth button */}
                     <div className="flex flex-col gap-3 mt-2">
-                        <button
-                            onClick={openAuth}
-                            className="border border-white/20 text-white/80 px-6 py-3 rounded-full font-black text-sm tracking-widest uppercase text-center hover:border-primary hover:text-primary transition-all duration-300"
-                        >
-                            Log In
-                        </button>
+                        <MobileNavActions 
+                            openAuth={openAuth} 
+                            closeMenu={() => setMobileOpen(false)} 
+                        />
                     </div>
                 </div>
             </div>
