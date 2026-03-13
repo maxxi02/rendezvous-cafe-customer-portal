@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.googleusercontent.com", // catch-all for Google
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com", // Story Images
+      },
     ],
   },
 };
