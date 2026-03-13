@@ -2,12 +2,16 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { anonymous } from "better-auth/plugins";
 import { MONGODB } from "../config/db";
+import { createAnonymousAdapter } from "./anonymous-adapter";
+
+const baseAdapter = mongodbAdapter(MONGODB);
+const adapter = createAnonymousAdapter(baseAdapter);
 
 export const auth = betterAuth({
   advanced: {
     cookiePrefix: "customer-portal",
   },
-  database: mongodbAdapter(MONGODB),
+  database: adapter,
   baseURL: process.env.API_URL as string,
   plugins: [anonymous()],
   trustedOrigins: [
@@ -16,7 +20,7 @@ export const auth = betterAuth({
     "https://rendezvous-cafe.vercel.app",
   ],
   rateLimit: {
-    enabled: false, // 👈 disable during development/testing
+    enabled: false,
   },
   socialProviders: {
     google: {
