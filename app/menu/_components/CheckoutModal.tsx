@@ -19,6 +19,7 @@ interface CheckoutModalProps {
   total: number;
   onClose: () => void;
   onConfirm: (order: CustomerOrder) => Promise<void>;
+  clearCart: () => void;
   sessionData?: SessionData | null;
 }
 
@@ -27,6 +28,7 @@ export function CheckoutModal({
   total,
   onClose,
   onConfirm,
+  clearCart,
   sessionData,
 }: CheckoutModalProps) {
   const [orderNote, setOrderNote] = useState("");
@@ -107,8 +109,9 @@ export function CheckoutModal({
       }
 
       // 4. Redirect to GCash — do NOT call onConfirm here since that
-      //    would trigger router.push('/order/waiting') and kill this redirect.
+      //    would duplicate the order creation via socket.
       sessionStorage.setItem("isRedirectingToPayment", "true");
+      clearCart();
       window.location.href = payData.checkoutUrl;
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");

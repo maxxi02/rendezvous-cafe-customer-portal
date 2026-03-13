@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 // After GCash redirects back here, we redirect the customer to /order/waiting
 // The webhook has already (or will shortly) confirm the payment on the server.
 export default function PaymentSuccessPage() {
-  const router = useRouter();
   const params = useSearchParams();
   const orderId = params.get("orderId");
   const sessionId = params.get("sessionId");
@@ -15,9 +14,25 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     console.log("[payment/success] Page loaded", { orderId, sessionId });
 
-    if (!orderId) {
-      console.log("[payment/success] No orderId, redirecting to menu");
-      router.replace("/menu");
+    let effectiveOrderId = orderId;
+    let effectiveSessionId = sessionId;
+
+    if (!effectiveOrderId) {
+      const stored = sessionStorage.getItem("orderSession");
+      if (stored) {
+        try {
+          const sess = JSON.parse(stored);
+          if (sess.lastOrderId) effectiveOrderId = sess.lastOrderId;
+          if (sess.sessionId && !effectiveSessionId) effectiveSessionId = sess.sessionId;
+        } catch (e) {
+          console.error("Failed to parse orderSession", e);
+        }
+      }
+    }
+
+    if (!effectiveOrderId) {
+      console.log("[payment/success] No orderId found, redirecting to menu");
+      window.location.replace("/menu");
       return;
     }
 
@@ -26,11 +41,11 @@ export default function PaymentSuccessPage() {
     audio.play().catch((err) => console.error("Audio playback failed:", err));
 
     // Confirm payment immediately
-    console.log("[payment/success] Confirming payment for orderId:", orderId);
+    console.log("[payment/success] Confirming payment for orderId:", effectiveOrderId);
     fetch("/api/payment/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId }),
+      body: JSON.stringify({ orderId: effectiveOrderId }),
     })
       .then((res) => {
         console.log("[payment/success] Payment confirm response:", res.status);
@@ -39,14 +54,14 @@ export default function PaymentSuccessPage() {
       .then((data) => console.log("[payment/success] Payment confirm data:", data))
       .catch((err) => console.error("[payment/success] confirm error:", err));
 
-    if (sessionId) {
-      console.log("[payment/success] Updating session with sessionId:", sessionId);
+    if (effectiveSessionId) {
+      console.log("[payment/success] Updating session with sessionId:", effectiveSessionId);
       const stored = sessionStorage.getItem("orderSession");
       if (stored) {
         try {
           const session = JSON.parse(stored);
-          session.sessionId = sessionId;
-          session.lastOrderId = orderId;
+          session.sessionId = effectiveSessionId;
+          session.lastOrderId = effectiveOrderId;
           sessionStorage.setItem("orderSession", JSON.stringify(session));
           console.log("[payment/success] Session updated:", session);
         } catch (e) {
@@ -61,11 +76,11 @@ export default function PaymentSuccessPage() {
     console.log("[payment/success] Scheduling redirect to /order/waiting in 1500ms");
     const t = setTimeout(() => {
       console.log("[payment/success] Redirecting to /order/waiting");
-      router.push("/order/waiting");
+      window.location.replace("/order/waiting");
     }, 1500);
 
     return () => clearTimeout(t);
-  }, [orderId, sessionId, router]);
+  }, [orderId, sessionId]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-6">

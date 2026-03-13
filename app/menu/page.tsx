@@ -658,6 +658,11 @@ function MenuContent() {
           total={cartTotal}
           onClose={() => setShowCheckout(false)}
           onConfirm={handleConfirmOrder}
+          clearCart={() => {
+            setCart([]);
+            setShowCheckout(false);
+            setShowCart(false);
+          }}
           sessionData={sessionData}
         />
       )}
