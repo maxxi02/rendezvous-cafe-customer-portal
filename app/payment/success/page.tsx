@@ -13,7 +13,11 @@ export default function PaymentSuccessPage() {
   const sessionId = params.get("sessionId");
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId) {
+      // No orderId, redirect to menu
+      router.replace("/menu");
+      return;
+    }
 
     // Play notification sound
     const audio = new Audio("/order-notification.mp3");
@@ -42,8 +46,13 @@ export default function PaymentSuccessPage() {
         }
       }
     }
+
     // Short delay to allow confirmation to propagate, then navigate to tracking
-    const t = setTimeout(() => router.replace("/order/waiting"), 1500);
+    const t = setTimeout(() => {
+      // Use push instead of replace to ensure proper navigation
+      router.push("/order/waiting");
+    }, 1500);
+
     return () => clearTimeout(t);
   }, [orderId, sessionId, router]);
 
