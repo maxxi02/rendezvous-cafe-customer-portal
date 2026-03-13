@@ -17,21 +17,30 @@ export default function PaymentSuccessPage() {
     let effectiveOrderId = orderId;
     let effectiveSessionId = sessionId;
 
+    console.log("[payment/success] Initial params:", { orderId, sessionId });
+
     if (!effectiveOrderId) {
       const stored = sessionStorage.getItem("orderSession");
+      console.log("[payment/success] No orderId in URL, checking sessionStorage:", stored);
       if (stored) {
         try {
           const sess = JSON.parse(stored);
-          if (sess.lastOrderId) effectiveOrderId = sess.lastOrderId;
-          if (sess.sessionId && !effectiveSessionId) effectiveSessionId = sess.sessionId;
+          if (sess.lastOrderId) {
+            effectiveOrderId = sess.lastOrderId;
+            console.log("[payment/success] Recovered orderId from session:", effectiveOrderId);
+          }
+          if (sess.sessionId && !effectiveSessionId) {
+            effectiveSessionId = sess.sessionId;
+            console.log("[payment/success] Recovered sessionId from session:", effectiveSessionId);
+          }
         } catch (e) {
-          console.error("Failed to parse orderSession", e);
+          console.error("[payment/success] Failed to parse orderSession", e);
         }
       }
     }
 
     if (!effectiveOrderId) {
-      console.log("[payment/success] No orderId found, redirecting to menu");
+      console.warn("[payment/success] No orderId found after recovery, redirecting to menu");
       window.location.replace("/menu");
       return;
     }
@@ -55,7 +64,7 @@ export default function PaymentSuccessPage() {
       .catch((err) => console.error("[payment/success] confirm error:", err));
 
     if (effectiveSessionId) {
-      console.log("[payment/success] Updating session with sessionId:", effectiveSessionId);
+      console.log("[payment/success] Syncing session storage for tracking:", effectiveSessionId);
       const stored = sessionStorage.getItem("orderSession");
       if (stored) {
         try {
@@ -63,12 +72,9 @@ export default function PaymentSuccessPage() {
           session.sessionId = effectiveSessionId;
           session.lastOrderId = effectiveOrderId;
           sessionStorage.setItem("orderSession", JSON.stringify(session));
-          console.log("[payment/success] Session updated:", session);
         } catch (e) {
-          console.error("[payment/success] Failed to update session:", e);
+          console.error("[payment/success] Failed to sync session storage:", e);
         }
-      } else {
-        console.log("[payment/success] No orderSession in sessionStorage");
       }
     }
 

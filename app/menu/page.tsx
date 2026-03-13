@@ -11,6 +11,7 @@ import { useSocket } from "../providers/socket-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useAnonymousSession } from "@/lib/use-anonymous-session";
 
 interface MenuItem {
   _id: string;
@@ -84,6 +85,8 @@ function MenuContent() {
   const qrTypeQuery = searchParams.get("type");
 
   // Handle auto-session for QR users
+  const { user: anonUser, createAnonymousUser } = useAnonymousSession();
+
   useEffect(() => {
     const initAutoSession = async () => {
       const stored = sessionStorage.getItem("orderSession");
@@ -98,40 +101,21 @@ function MenuContent() {
       if (currentSession?.customerId && !tableIdQuery && !qrTypeQuery) return;
 
       try {
-        // 1. Check existing session and only sign in anonymously if needed
-        let userId: string | undefined = authSession?.user?.id;
-        let isAnonymous = !!authSession?.user?.isAnonymous;
+        // 1. Determine user identity using Google Auth or new JWT Anonymous system
+        let userId: string | undefined;
+        let isAnonymous = false;
+        let customerName = "Guest";
 
-        if (!userId) {
-          const res = await authClient.signIn.anonymous();
-
-          if (res.error) {
-            if (
-              res.error.code ===
-              "ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY" ||
-              res.error.status === 400
-            ) {
-              const sessionRes = await authClient.getSession();
-              if (sessionRes.data?.user) {
-                userId = sessionRes.data.user.id;
-                isAnonymous = !!sessionRes.data.user.isAnonymous;
-              } else {
-                console.error("Auto-login failed to recover session:", sessionRes.error);
-                return;
-              }
-            } else {
-              console.error("Auto-login failed:", res.error);
-              return;
-            }
-          } else {
-            userId = res.data?.user?.id;
-            isAnonymous = true;
-          }
-        }
-
-        if (!userId) {
-          console.error("No user ID obtained after auth check");
-          return;
+        if (authSession?.user && !authSession.user.isAnonymous) {
+          // Real Google User
+          userId = authSession.user.id;
+          customerName = authSession.user.name || "Guest";
+          isAnonymous = false;
+        } else if (anonUser) {
+          // Existing JWT Anonymous User
+          userId = anonUser.id;
+          customerName = anonUser.name;
+          isAnonymous = true;
         }
 
         // 2. Fetch table info if needed
@@ -139,11 +123,8 @@ function MenuContent() {
         let isTableUnavailable = false;
         if (tableIdQuery) {
           try {
-            const apiUrl =
-              process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-            const tableRes = await fetch(
-              `${apiUrl}/api/tables/${tableIdQuery}`,
-            );
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+            const tableRes = await fetch(`${apiUrl}/api/tables/${tableIdQuery}`);
             if (tableRes.ok) {
               const table = await tableRes.json();
               tableLabel = table.label;
@@ -161,67 +142,61 @@ function MenuContent() {
             qrType: qrTypeQuery || "dine-in",
             isAnonymous: true,
             isUnavailable: true,
-            customerId: userId,
+            customerId: userId || "temp",
           };
-          sessionStorage.setItem(
-            "orderSession",
-            JSON.stringify(unavailableSession),
-          );
+          sessionStorage.setItem("orderSession", JSON.stringify(unavailableSession));
           setSessionData(unavailableSession);
           return;
         }
 
-        // --- Occuppy table if a table exists ---
+        // 3. Occupy table if a table exists
         if (tableIdQuery) {
           try {
-            const apiUrl =
-              process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
             await fetch(`${apiUrl}/api/tables`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                tableId: tableIdQuery,
-                status: "occupied",
-              }),
+              body: JSON.stringify({ tableId: tableIdQuery, status: "occupied" }),
             });
           } catch (e) {
             console.error("Failed to occupy table", e);
           }
         }
 
-        // 3. Determine display name
-        let automaticName = "Guest";
-        if (tableLabel) {
-          const numMatch = tableLabel.match(/\d+/);
-          const num = numMatch ? numMatch[0] : tableLabel;
-          automaticName = `TABLE-#${num}`;
-        } else if (tableIdQuery) {
-          const numMatch = tableIdQuery.match(/\d+/);
-          const num = numMatch ? numMatch[0] : tableIdQuery;
-          automaticName = `TABLE-#${num}`;
-        } else if (qrTypeQuery === "walk-in") {
-          automaticName = "Walk-In Customer";
-        } else if (qrTypeQuery === "drive-thru") {
-          automaticName = "Drive-Thru Customer";
+        // 4. Generate name for new anonymous users if no existing session
+        if (!userId) {
+          let automaticName = "Guest";
+          if (tableLabel) {
+            const numMatch = tableLabel.match(/\d+/);
+            const num = numMatch ? numMatch[0] : tableLabel;
+            automaticName = `TABLE-#${num}`;
+          } else if (tableIdQuery) {
+            const numMatch = tableIdQuery.match(/\d+/);
+            const num = numMatch ? numMatch[0] : tableIdQuery;
+            automaticName = `TABLE-#${num}`;
+          } else if (qrTypeQuery === "walk-in") {
+            automaticName = "Walk-In Customer";
+          } else if (qrTypeQuery === "drive-thru") {
+            automaticName = "Drive-Thru Customer";
+          }
+
+          // Create the new JWT anonymous session
+          const newUser = await createAnonymousUser(automaticName, "guest@rendezvous.com");
+          userId = newUser.id;
+          customerName = newUser.name;
+          isAnonymous = true;
         }
 
-        // 4. Update user name (only if it's still generic/guest)
-        if (isAnonymous || !authSession?.user?.name) {
-          await authClient.updateUser({ name: automaticName });
-        }
-
-        // 5. Create/Update order session
+        // 5. Create/Update order session for tracking
         const newSessionData: SessionData = {
           ...currentSession,
-          customerName: isAnonymous || !authSession?.user?.name ? automaticName : authSession.user.name,
+          customerName: customerName,
           tableId: tableIdQuery || currentSession?.tableId || undefined,
           qrType: qrTypeQuery || currentSession?.qrType || "dine-in",
           isAnonymous: isAnonymous,
           email: authSession?.user?.email || "guest@rendezvous.com",
           customerId: userId,
-          sessionId:
-            currentSession?.sessionId ||
-            `sess-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          sessionId: currentSession?.sessionId || `sess-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         };
 
         sessionStorage.setItem("orderSession", JSON.stringify(newSessionData));
@@ -236,7 +211,7 @@ function MenuContent() {
     };
 
     initAutoSession();
-  }, [tableIdQuery, qrTypeQuery]);
+  }, [tableIdQuery, qrTypeQuery, authSession, anonUser]);
 
   // ─── Fetch shop status on mount ────────────────────────────────────────────
   useEffect(() => {

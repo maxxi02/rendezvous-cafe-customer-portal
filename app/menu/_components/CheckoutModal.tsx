@@ -102,9 +102,12 @@ export function CheckoutModal({
           const sess = JSON.parse(stored);
           sess.sessionId = effectiveSessionId;
           sess.lastOrderId = orderId;
+          // Ensure we persist the customerId for recovery
+          if (sessionData?.customerId) sess.customerId = sessionData.customerId;
           sessionStorage.setItem("orderSession", JSON.stringify(sess));
-        } catch {
-          /* ignore */
+          console.log("[CheckoutModal] Persisted session for redirect:", sess);
+        } catch (e) {
+          console.error("[CheckoutModal] Failed to update session:", e);
         }
       }
 
