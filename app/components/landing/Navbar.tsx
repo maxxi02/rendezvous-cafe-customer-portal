@@ -184,6 +184,7 @@ function AuthModal({ isOpen, onClose }: AuthModalProps) {
 const navLinks = [
     { label: "Home", href: "/" },
     { label: "Coffee", href: "/coffee" },
+    { label: "Stories", href: "/stories" },
 ];
 
 // ─── Navbar ────────────────────────────────────────────────────────────────────
