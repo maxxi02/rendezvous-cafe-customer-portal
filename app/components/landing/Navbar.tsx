@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ShoppingBag, Menu, X, Coffee } from "lucide-react";
 import { useSession, signOut, signIn } from "@/lib/auth-client";
@@ -91,9 +91,12 @@ const navLinks = [
 // ─── Navbar ────────────────────────────────────────────────────────────────────
 export default function Navbar() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [authOpen, setAuthOpen] = useState(false);
+
+    const callbackURL = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -204,6 +207,7 @@ export default function Navbar() {
             <AuthModal
                 isOpen={authOpen}
                 onClose={() => setAuthOpen(false)}
+                callbackURL={callbackURL}
             />
         </>
     );

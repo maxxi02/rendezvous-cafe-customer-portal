@@ -83,6 +83,7 @@ function MenuContent() {
   // null = loading, true = open, false = closed
   const [isShopOpen, setIsShopOpen] = useState<boolean | null>(null);
   const searchParams = useSearchParams();
+  const callbackURL = `/menu${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   const tableIdQuery = searchParams.get("table");
   const qrTypeQuery = searchParams.get("type");
@@ -645,6 +646,7 @@ function MenuContent() {
       <AuthModal
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
+        callbackURL={callbackURL}
       />
     </div>
   );

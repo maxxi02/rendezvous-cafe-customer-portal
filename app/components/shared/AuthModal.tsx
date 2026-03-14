@@ -21,9 +21,10 @@ export function GoogleIcon() {
 export interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
+    callbackURL?: string;
 }
 
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, callbackURL }: AuthModalProps) {
     // Lock body scroll
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
@@ -31,6 +32,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }, [isOpen]);
 
     if (!isOpen) return null;
+
+    const currentCallback = callbackURL || "/";
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -78,7 +81,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         onClick={async () => {
                             await signIn.social({
                                 provider: "google",
-                                callbackURL: "/",
+                                callbackURL: currentCallback,
                             });
                         }}
                         className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 py-4 px-6 rounded-2xl font-bold text-sm hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-black/20"
