@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ShoppingCart, Coffee, Utensils, ArrowLeft, Lock } from "lucide-react";
+import { ShoppingCart, Coffee, Utensils, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { MenuCard } from "./_components/MenuCard";
 import { Cart } from "./_components/Cart";
@@ -12,6 +12,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useAnonymousSession } from "@/lib/use-anonymous-session";
+import { AuthModal } from "@/app/components/shared/AuthModal";
+import { MenuAuthActions } from "./_components/MenuAuthActions";
 
 interface MenuItem {
   _id: string;
@@ -77,6 +79,7 @@ function MenuContent() {
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
   // null = loading, true = open, false = closed
   const [isShopOpen, setIsShopOpen] = useState<boolean | null>(null);
   const searchParams = useSearchParams();
@@ -211,7 +214,7 @@ function MenuContent() {
     };
 
     initAutoSession();
-  }, [tableIdQuery, qrTypeQuery, authSession, anonUser]);
+  }, [tableIdQuery, qrTypeQuery, authSession, anonUser, createAnonymousUser]);
 
   // ─── Fetch shop status on mount ────────────────────────────────────────────
   useEffect(() => {
@@ -481,13 +484,6 @@ function MenuContent() {
       <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-white/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push("/")}
-              className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/60 hover:text-white"
-              title="Back to home"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
             <div>
               <h1 className="text-white font-black text-2xl uppercase tracking-widest">
                 RENDEZVOUS<span className="text-primary">.</span>
@@ -499,22 +495,25 @@ function MenuContent() {
           </div>
 
           {/* Cart button */}
-          <button
-            onClick={() => setShowCart(true)}
-            className="relative flex items-center gap-3 bg-primary text-background px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/30"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>Cart</span>
-            {cartCount > 0 && (
-              <>
-                <span className="font-black">·</span>
-                <span>₱{cartTotal.toFixed(0)}</span>
-                <span className="absolute -top-2 -right-2 h-5 w-5 bg-background text-primary text-xs rounded-full flex items-center justify-center font-black border-2 border-primary">
-                  {cartCount}
-                </span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3">
+            <MenuAuthActions openAuth={() => setAuthOpen(true)} />
+            <button
+              onClick={() => setShowCart(true)}
+              className="relative flex items-center gap-3 bg-primary text-background px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/30"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>Cart</span>
+              {cartCount > 0 && (
+                <>
+                  <span className="font-black">·</span>
+                  <span>₱{cartTotal.toFixed(0)}</span>
+                  <span className="absolute -top-2 -right-2 h-5 w-5 bg-background text-primary text-xs rounded-full flex items-center justify-center font-black border-2 border-primary">
+                    {cartCount}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -562,7 +561,7 @@ function MenuContent() {
 
         {/* Products grid */}
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {[...Array(10)].map((_, i) => (
               <div
                 key={i}
@@ -578,7 +577,7 @@ function MenuContent() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
             {filteredProducts.map((product) => (
               <MenuCard key={product._id} product={product} onAdd={addToCart} />
             ))}
@@ -641,6 +640,12 @@ function MenuContent() {
           sessionData={sessionData}
         />
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+      />
     </div>
   );
 }
