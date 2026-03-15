@@ -22,18 +22,22 @@ export interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
     callbackURL?: string;
+    title?: string;
+    message?: string;
 }
 
-export function AuthModal({ isOpen, onClose, callbackURL }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, callbackURL, title, message }: AuthModalProps) {
     // Lock body scroll
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
     }, [isOpen]);
-
+    
     if (!isOpen) return null;
 
     const currentCallback = callbackURL || "/";
+    const modalTitle = title || "Welcome back.";
+    const modalMessage = message || "Sign in to access your orders and rewards.";
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -70,10 +74,10 @@ export function AuthModal({ isOpen, onClose, callbackURL }: AuthModalProps) {
 
                     {/* Heading */}
                     <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2">
-                        Welcome back.
+                        {modalTitle}
                     </h2>
                     <p className="text-white/40 text-sm font-medium mb-8 leading-relaxed">
-                        Sign in to access your orders and rewards.
+                        {modalMessage}
                     </p>
 
                     {/* Google OAuth */}

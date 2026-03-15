@@ -8,6 +8,7 @@ import { CreateStoryModal } from "./_components/CreateStoryModal";
 import { formatDistanceToNow } from "date-fns";
 import Navbar from "../components/landing/Navbar";
 import { toast } from "sonner";
+import { AuthModal } from "../components/shared/AuthModal";
 
 interface Story {
   _id: string;
@@ -28,6 +29,7 @@ export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Authentication check: Only registered users can interact (not anonymous)
   const isAuthUser = session?.user && !(session.user as any).isAnonymous;
@@ -113,7 +115,7 @@ export default function StoriesPage() {
               if (isAuthUser) {
                 setIsCreateModalOpen(true);
               } else {
-                toast.error("Please sign in to share a story.");
+                setIsAuthModalOpen(true);
               }
             }}
             className="w-10 h-10 md:w-auto md:h-auto md:px-5 md:py-2.5 bg-primary text-background rounded-full font-bold text-sm tracking-widest uppercase hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
@@ -167,6 +169,15 @@ export default function StoriesPage() {
         }}
         session={session}
         apiUrl={API_URL}
+      />
+
+      {/* Auth Modal for "Login First" requirement */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        title="Login Required"
+        message="Login with your Google account first to share a story."
+        callbackURL="/stories"
       />
     </main>
   );
