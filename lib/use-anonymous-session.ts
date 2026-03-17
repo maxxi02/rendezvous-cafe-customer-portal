@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { AnonymousUser } from "./anonymous-session";
 
 /**
@@ -24,7 +24,7 @@ export function useAnonymousSession() {
     setIsLoading(false);
   }, []);
 
-  const createAnonymousUser = (name: string, email: string) => {
+  const createAnonymousUser = useCallback((name: string, email: string) => {
     const newUser: AnonymousUser = {
       id: `anon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name,
@@ -36,12 +36,12 @@ export function useAnonymousSession() {
     localStorage.setItem("anonymous-user", JSON.stringify(newUser));
     setUser(newUser);
     return newUser;
-  };
+  }, []);
 
-  const clearAnonymousUser = () => {
+  const clearAnonymousUser = useCallback(() => {
     localStorage.removeItem("anonymous-user");
     setUser(null);
-  };
+  }, []);
 
   return {
     user,

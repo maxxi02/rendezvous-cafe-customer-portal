@@ -579,9 +579,17 @@ function MenuContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <MenuCard key={product._id} product={product} onAdd={addToCart} />
-            ))}
+            {filteredProducts.map((product) => {
+              const cartItem = cart.find(item => item._id === product._id);
+              return (
+                <MenuCard 
+                  key={product._id} 
+                  product={product} 
+                  onAdd={addToCart} 
+                  cartQuantity={cartItem?.quantity || 0}
+                />
+              );
+            })}
           </div>
         )}
       </div>

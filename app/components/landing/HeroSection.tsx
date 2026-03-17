@@ -3,42 +3,122 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const coffeeProducts = [
+interface FeaturedProduct {
+  name: string;
+  label: string;
+  imageUrl: string;
+  size: string;
+  lift: string;
+  shadow: string;
+  featured: boolean;
+}
+
+const TARGET_CONFIGS = [
   {
-    name: "Vanilla",
-    label: "VANILLA",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuDmRxJBry45FwdjzwhG1lT_B2ZU2XB2KPDUVSZ69tmxcCqrSnnXQYNPPGQdWZfBICKScBe0CNHfu2QPYetBHgllB98ce-gfuwfMA2dOuW7oNFg4CYZFghncdGFleh0KEsBnDoxcfMsXapKmz2ilZtYoKJOA5uGQOjj8F5s2jaZuLHBajUqg-9B3MDWotsV1amT9vg_2wryQl7PI6YT0iGwzXLH2mR-sH7EaCmwWwuF-1cs_wCCZe3TnPGodxFePO_wVzmhyFfRIUtg",
+    search: "crispy chicksilog",
     size: "w-24 h-24",
     lift: "group-hover:-translate-y-4",
-    shadow: "drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]",
+    shadow: "drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10",
+    featured: false,
+    defaultLabel: "CHICKSILOG",
+    defaultName: "Crispy"
   },
   {
-    name: "Caramel",
-    label: "CARAMEL",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAoYNb0hVsJgFG6Ijarf1YB4ZEgSOgf1YmD1u2pfkh_1JKxekJaF3BhSMWijuaDiTMKRQsDW7KsN8vmcK_lMKuJWzKA5J6p8GhSe1gjazmEpe4E9MV1AM6jqffZzKHSM9Oa72dT3w1w5iET8ILxQUnQZXcLlRmiRUSbm3U1AzZp6QSuHpJw9Ew-AMm0s4Mm7Uf4P_EJKokfZBq5K6qu8e6ciG3ByGLVxV3ALyWUxpF7U7s47lJ4L3xjwVLkLJK1mvfMUOaO1jXUAg",
+    search: "jumbo hungarian sausilog|jumbo hangarian sausilog",
     size: "w-28 h-28",
     lift: "group-hover:-translate-y-6",
-    shadow: "drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)]",
+    shadow: "drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] border-4 border-primary/50",
     featured: true,
+    defaultLabel: "SAUSILOG",
+    defaultName: "Jumbo Hungarian"
   },
   {
-    name: "Chocolate",
-    label: "CHOCOLATE",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuD5glhjfB5Ez6H7LTGFtE065sSvB0Mg4uhJY9NElpHhTAnYEJdbHftsZVqZjsbrBux8i3Ja7vjOvoB1PCU_LYYYFkYm-Afl0Pa-ue5r_oKEvw6gHsMkIeh_m_GbFwDJaNSjOOgZLjCT25iBweV_ghDFOTquQ-7JwDjauJxYQbTf9OTdekuReKC4PtyM2nb_O0_RAbAP9i4Z0F1hbQIuuejjZzA_LZY__1dJUXIDOhLZChNI7dK-U4ofSpiQjQNciT8DuC99-CB8dEs",
+    search: "special taal tapsilog",
     size: "w-24 h-24",
     lift: "group-hover:-translate-y-4",
-    shadow: "drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]",
+    shadow: "drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10",
+    featured: false,
+    defaultLabel: "TAPSILOG",
+    defaultName: "Special Taal"
   },
 ];
 
+const FALLBACK_IMAGES: Record<string, string> = {
+  "crispy chicksilog": "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=400&auto=format&fit=crop",
+  "jumbo hungarian sausilog": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?q=80&w=400&auto=format&fit=crop",
+  "special taal tapsilog": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=400&auto=format&fit=crop"
+};
+
 export default function HeroSection() {
   const [scrollOffset, setScrollOffset] = useState(0);
+  const [queryString, setQueryString] = useState("");
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setQueryString(window.location.search);
     const handleScroll = () => {
       setScrollOffset(window.scrollY);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    const fetchProducts = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/products/categories`);
+            if (res.ok) {
+                const categories = await res.json();
+                let allProducts: any[] = [];
+                if (Array.isArray(categories)) {
+                     categories.forEach((cat: any) => {
+                         if (Array.isArray(cat.products)) {
+                             allProducts = [...allProducts, ...cat.products];
+                         }
+                     });
+                }
+                
+                const mapped = TARGET_CONFIGS.map(config => {
+                    const matched = allProducts.find(p => {
+                        const pName = p.name?.toLowerCase() || "";
+                        return config.search.split('|').some(s => pName.includes(s));
+                    });
+
+                    // Logic to split the name into Display Name and Label
+                    let displayName = config.defaultName;
+                    let displayLabel = config.defaultLabel;
+
+                    if (matched) {
+                        const fullName = matched.name;
+                        const parts = fullName.split(' ');
+                        if (parts.length > 1) {
+                            displayLabel = parts[parts.length - 1].toUpperCase();
+                            displayName = parts.slice(0, -1).join(' ');
+                        } else {
+                            displayName = fullName;
+                        }
+                    }
+
+                    return {
+                        name: displayName,
+                        label: displayLabel,
+                        imageUrl: matched?.imageUrl || FALLBACK_IMAGES[config.search.split('|')[0]] || "",
+                        size: config.size,
+                        lift: config.lift,
+                        shadow: config.shadow,
+                        featured: config.featured
+                    };
+                });
+
+                setFeaturedProducts(mapped);
+            }
+        } catch (e) {
+            console.error("Failed to fetch products for landing page", e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    fetchProducts();
+    
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -78,12 +158,12 @@ export default function HeroSection() {
       <div className="relative z-10 container mx-auto px-6 flex flex-col items-center">
         {/* Hero Title */}
         <div className="relative text-center mb-12 animate-fade-in-up">
-          <h1 className="text-6xl md:text-[100px] font-black uppercase leading-[0.9] tracking-tighter text-white">
-            FRESHLY BREWED
+          <h1 className="text-6xl md:text-[80px] font-black uppercase leading-[0.9] tracking-tighter text-white">
+            BEST SELLERS
           </h1>
           <div className="relative -mt-2 md:-mt-6">
-            <span className="text-6xl md:text-[100px] font-black uppercase leading-[0.9] tracking-tighter text-white block">
-              MOMENTS
+            <span className="text-6xl md:text-[80px] font-black uppercase leading-[0.9] tracking-tighter text-white block">
+              IN TOWN
             </span>
             {/* Cursive accent */}
             <span
@@ -93,13 +173,13 @@ export default function HeroSection() {
                 fontSize: "clamp(2.5rem, 7vw, 5rem)",
               }}
             >
-              Oyeah!
+              Order Now!
             </span>
           </div>
 
           {/* Subtitle */}
           <p className="mt-6 text-white/50 text-sm font-semibold tracking-[0.3em] uppercase">
-            Crafted for the extraordinary
+            Our top dishes served fresh and hot
           </p>
         </div>
 
@@ -108,57 +188,86 @@ export default function HeroSection() {
           <div className="relative pl-5 border-l-2 border-primary">
             <span className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-primary rounded-full" />
             <p className="text-[10px] leading-relaxed tracking-wider uppercase text-foreground/50 font-medium font-sans">
-              Discover the taste of freshly roasted beans and handcrafted coffee
-              in every sip.
+              Discover the taste of freshly cooked meals and savory flavors
+              in every bite.
             </p>
           </div>
         </div>
 
-        {/* Coffee Products */}
-        <div className="flex flex-col md:flex-row items-end justify-center gap-4 lg:gap-8 w-full max-w-5xl mt-8">
-          {coffeeProducts.map((product) => (
-            <div
-              key={product.name}
-              className={`relative group cursor-pointer flex flex-col items-center ${
-                product.featured ? "w-full md:w-2/5 z-10" : "w-full md:w-[30%]"
-              }`}
-            >
+        {/* Products */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-5xl mt-6 relative z-10 min-h-[400px]">
+          {isLoading ? (
+            // Skeleton State
+            [0, 1, 2].map((i) => (
               <div
-                className={`relative transition-transform duration-500 ${product.lift}`}
+                key={i}
+                className={`relative flex flex-col items-center animate-pulse ${
+                  i === 1 ? "w-4/5 md:w-2/5" : "w-3/4 md:w-[30%]"
+                }`}
               >
-                <img
-                  src={product.src}
-                  alt={`${product.name} Frappe Coffee`}
-                  className={`w-full h-auto object-contain rounded-t-3xl ${product.shadow}`}
-                />
-                {/* Label overlay */}
-                <div className="absolute inset-x-0 bottom-6 flex flex-col items-center text-center px-4">
-                  <span
-                    className={`font-black uppercase tracking-tight text-white/30 ${
-                      product.featured
-                        ? "text-5xl lg:text-6xl"
-                        : "text-4xl lg:text-5xl"
-                    }`}
-                  >
-                    {product.name}
-                  </span>
-                  <div
-                    className={`mt-2 border-2 border-white/40 rounded-full flex items-center justify-center bg-black/10 backdrop-blur-sm transition-all duration-300 group-hover:border-primary group-hover:bg-primary/10 ${
-                      product.featured ? "w-24 h-24" : "w-20 h-20"
-                    }`}
-                  >
+                <div className={`aspect-square w-full rounded-[3rem] bg-white/5 border border-white/10`} />
+                <div className="mt-8 w-2/3 h-8 bg-white/5 rounded-lg" />
+                <div className="mt-2 w-1/3 h-6 bg-primary/20 rounded-full" />
+              </div>
+            ))
+          ) : (
+            featuredProducts.map((product) => (
+              <div
+                key={product.name}
+                className={`relative group cursor-pointer flex flex-col items-center transition-all duration-500 ${
+                  product.featured ? "w-4/5 md:w-2/5 z-20" : "w-3/4 md:w-[30%]"
+                }`}
+              >
+                <div
+                  className={`relative transition-transform duration-500 w-full aspect-square ${product.lift}`}
+                >
+                  <img
+                    src={product.imageUrl}
+                    alt={`${product.name} ${product.label}`}
+                    className={`w-full h-full object-cover rounded-[3rem] ${product.shadow}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop";
+                    }}
+                  />
+                  <div className="absolute inset-x-0 -bottom-6 flex flex-col items-center text-center px-4">
                     <span
-                      className={`font-black tracking-widest text-white group-hover:text-primary transition-colors ${
-                        product.featured ? "text-sm" : "text-xs"
+                      className={`font-black uppercase tracking-tight text-white drop-shadow-xl transition-all duration-300 ${
+                        product.featured
+                          ? "text-3xl lg:text-4xl"
+                          : "text-2xl lg:text-3xl"
                       }`}
                     >
-                      {product.label}
+                      {product.name}
                     </span>
+                    <div
+                      className={`mt-2 border-2 border-primary rounded-full flex items-center justify-center bg-background/90 backdrop-blur-md shadow-lg shadow-black/50 transition-all duration-300 group-hover:bg-primary ${
+                        product.featured ? "px-6 py-2" : "px-4 py-1.5"
+                      }`}
+                    >
+                      <span
+                        className={`font-black tracking-widest text-primary group-hover:text-background transition-colors ${
+                          product.featured ? "text-sm" : "text-xs"
+                        }`}
+                      >
+                        {product.label}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
+        </div>
+
+        {/* Order Now Button */}
+        <div className="mt-20 z-20 animate-fade-in-up pb-10">
+          <Link 
+            href={`/menu${queryString}`}
+            className="px-10 py-5 bg-primary text-background rounded-full font-black text-lg uppercase tracking-widest hover:bg-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(255,160,0,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] block text-center"
+          >
+            Order Now
+          </Link>
         </div>
       </div>
 
@@ -184,3 +293,4 @@ export default function HeroSection() {
     </main>
   );
 }
+

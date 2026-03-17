@@ -2,6 +2,7 @@
 
 import { Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react';
 import { CustomerOrderItem } from '@/app/types/order.type';
+import { useState } from 'react';
 
 interface CartProps {
     items: CustomerOrderItem[];
@@ -13,6 +14,7 @@ interface CartProps {
 
 export function Cart({ items, onUpdate, onRemove, onClose, onCheckout }: CartProps) {
     const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     return (
         <>
@@ -83,11 +85,42 @@ export function Cart({ items, onUpdate, onRemove, onClose, onCheckout }: CartPro
                         <span className="text-primary font-black text-2xl">₱{total.toFixed(2)}</span>
                     </div>
                     <button
-                        onClick={onCheckout}
+                        onClick={() => setShowConfirm(true)}
                         className="w-full bg-primary text-background py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/20"
                     >
                         Place Order
                     </button>
+                </div>
+            )}
+
+            {/* Custom Confirmation Modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-sm bg-background border border-white/10 rounded-3xl p-6 shadow-2xl text-center">
+                        <h3 className="text-white font-black text-xl uppercase tracking-widest mb-3">
+                            Confirm Order
+                        </h3>
+                        <p className="text-white/60 text-sm mb-8">
+                            Are you sure you want to pay or edit your order?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirm(false)}
+                                className="flex-1 bg-white/10 text-white py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/20 active:scale-95 transition-all duration-200"
+                            >
+                                Edit Order
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowConfirm(false);
+                                    onCheckout();
+                                }}
+                                className="flex-1 bg-primary text-background py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/20"
+                            >
+                                Proceed to Pay
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </>

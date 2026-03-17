@@ -17,13 +17,19 @@ export interface MenuItem {
 interface MenuCardProps {
     product: MenuItem;
     onAdd: (product: MenuItem) => void;
+    cartQuantity?: number;
 }
 
-export function MenuCard({ product, onAdd }: MenuCardProps) {
+export function MenuCard({ product, onAdd, cartQuantity = 0 }: MenuCardProps) {
     return (
         <div className="group relative rounded-2xl overflow-hidden bg-card border border-white/10 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1">
             {/* Image */}
             <div className="relative h-44 overflow-hidden">
+                {cartQuantity > 0 && (
+                    <div className="absolute top-3 right-3 z-10 bg-primary text-background font-black text-xs h-7 min-w-[28px] px-2 rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-2 border-background">
+                        {cartQuantity}
+                    </div>
+                )}
                 {product.imageUrl ? (
                     <img
                         src={product.imageUrl}
