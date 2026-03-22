@@ -44,6 +44,13 @@ export default function HeroSection() {
   const [queryString, setQueryString] = useState("");
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     setQueryString(window.location.search);
@@ -117,14 +124,19 @@ export default function HeroSection() {
         }}
       />
 
-      {/* Ghost watermark — behind cards */}
+      {/* Ghost watermark — scroll-linked horizontal parallax */}
       <div
-        className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+        className="absolute inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none select-none z-0 overflow-hidden"
         style={{ opacity: 0.045 }}
       >
         <span
-          className="font-black-han whitespace-nowrap text-white leading-none"
-          style={{ fontSize: "clamp(6rem, 18vw, 18rem)", letterSpacing: "-0.02em" }}
+          className="font-black-han whitespace-nowrap text-white leading-none block"
+          style={{
+            fontSize: "clamp(6rem, 18vw, 18rem)",
+            letterSpacing: "-0.02em",
+            transform: `translateX(${-scrollY * 0.4}px)`,
+            willChange: "transform",
+          }}
         >
           RENDEZVOUS
         </span>
