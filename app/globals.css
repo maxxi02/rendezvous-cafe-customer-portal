@@ -212,3 +212,26 @@ html.lenis body {
     display: none;
   }
 }
+
+/* ─── Hero redesign additions ─── */
+@keyframes wobble-pulse {
+  0%, 100% { transform: rotate(-6deg) scale(1); }
+  25%       { transform: rotate(-8deg) scale(1.04); }
+  75%       { transform: rotate(-4deg) scale(0.97); }
+}
+.animate-wobble-pulse {
+  animation: wobble-pulse 3s ease-in-out infinite;
+}
+
+@keyframes stagger-up {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-stagger-1 { animation: stagger-up 0.7s ease-out 0.1s both; }
+.animate-stagger-2 { animation: stagger-up 0.7s ease-out 0.3s both; }
+.animate-stagger-3 { animation: stagger-up 0.7s ease-out 0.5s both; }
+.animate-stagger-4 { animation: stagger-up 0.7s ease-out 0.7s both; }
+.animate-stagger-5 { animation: stagger-up 0.7s ease-out 0.9s both; }
+
+.font-black-han { font-family: "Black Han Sans", "Anton", sans-serif; }
+.font-dancing   { font-family: "Dancing Script", cursive; }

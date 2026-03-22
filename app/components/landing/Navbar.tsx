@@ -42,7 +42,19 @@ function NavActions({ openAuth }: { openAuth: () => void }) {
     return (
         <button
             onClick={openAuth}
-            className="hidden md:block border border-white/20 text-white/80 px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-all duration-300"
+            className="hidden md:block px-5 py-2.5 rounded-full font-black text-xs tracking-widest uppercase transition-all duration-300 hover:text-primary"
+            style={{
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "rgba(255,255,255,0.8)",
+            }}
+            onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#E8621A";
+                (e.currentTarget as HTMLButtonElement).style.color = "#E8621A";
+            }}
+            onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)";
+                (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.8)";
+            }}
         >
             Log In
         </button>
@@ -112,32 +124,46 @@ export default function Navbar() {
     return (
         <>
             <nav
-                className={`fixed top-0 left-0 right-0 z-50 px-6 py-5 md:px-12 transition-all duration-500 ${scrolled
-                    ? "bg-background/90 backdrop-blur-md shadow-lg shadow-black/20"
-                    : "bg-transparent"
-                    }`}
+                className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 md:px-12 transition-all duration-500 ${
+                    scrolled
+                        ? "backdrop-blur-md shadow-lg shadow-black/30"
+                        : ""
+                }`}
+                style={{
+                    background: scrolled
+                        ? "rgba(10,10,10,0.92)"
+                        : "rgba(10,10,10,0.75)",
+                    borderBottom: "1px solid rgba(232,98,26,0.12)",
+                }}
             >
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
-                        <span className="text-3xl font-black tracking-wider uppercase text-white transition-all duration-300">
-                            RENDEZVOUS<span className="text-primary">.</span>
+                        <span
+                            className="font-black-han text-2xl tracking-wider uppercase text-white transition-all duration-300"
+                        >
+                            RENDEZVOUS<span style={{ color: "#E8621A" }}>.</span>
                         </span>
                     </Link>
 
                     {/* Desktop nav links */}
-                    <div className="hidden md:flex items-center gap-8 text-sm font-bold tracking-widest uppercase">
+                    <div className="hidden md:flex items-center gap-10 text-[11px] font-black tracking-[0.2em] uppercase">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.label}
                                 href={link.href}
-                                className={`relative pb-1 transition-colors duration-300 hover:text-primary group ${pathname === link.href ? "text-primary" : "text-white/80"
-                                    }`}
+                                className={`relative pb-1 transition-colors duration-300 hover:text-primary group ${
+                                    pathname === link.href ? "text-primary" : "text-white/75"
+                                }`}
                             >
                                 {link.label}
                                 <span
-                                    className={`absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-300 ${pathname === link.href ? "w-full" : "w-0 group-hover:w-full"
-                                        }`}
+                                    className={`absolute bottom-0 left-0 h-0.5 transition-all duration-300 ${
+                                        pathname === link.href
+                                            ? "w-full"
+                                            : "w-0 group-hover:w-full"
+                                    }`}
+                                    style={{ background: "#E8621A" }}
                                 />
                             </Link>
                         ))}
@@ -145,12 +171,13 @@ export default function Navbar() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-3">
-                        {/* Cart */}
+                        {/* Cart — orange circle */}
                         <button
                             aria-label="Cart"
-                            className="w-10 h-10 flex items-center justify-center bg-primary text-background rounded-full hover:scale-110 hover:bg-white transition-all duration-300 shadow-lg shadow-primary/30"
+                            className="w-10 h-10 flex items-center justify-center rounded-full hover:scale-110 transition-all duration-300"
+                            style={{ background: "#E8621A" }}
                         >
-                            <ShoppingBag size={18} strokeWidth={2.5} />
+                            <ShoppingBag size={17} strokeWidth={2.5} className="text-white" />
                         </button>
 
                         <NavActions openAuth={openAuth} />
