@@ -1,34 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { X, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface FeaturedProduct {
+  _id?: string;
   name: string;
   label: string;
+  description: string;
+  price?: number;
   imageUrl: string;
-  featured: boolean;
 }
 
+// ─── Fallback configs ─────────────────────────────────────────────────────────
 const TARGET_CONFIGS = [
-  {
-    search: "crispy chicksilog",
-    featured: false,
-    defaultLabel: "CHICKSILOG",
-    defaultName: "Crispy",
-  },
-  {
-    search: "jumbo hungarian sausilog|jumbo hangarian sausilog",
-    featured: true,
-    defaultLabel: "SAUSILOG",
-    defaultName: "Jumbo Hungarian",
-  },
-  {
-    search: "special taal tapsilog",
-    featured: false,
-    defaultLabel: "TAPSILOG",
-    defaultName: "Special Taal",
-  },
+  { search: "crispy chicksilog",                                 defaultLabel: "CHICKSILOG", defaultName: "Crispy" },
+  { search: "jumbo hungarian sausilog|jumbo hangarian sausilog", defaultLabel: "SAUSILOG",   defaultName: "Jumbo Hungarian" },
+  { search: "special taal tapsilog",                             defaultLabel: "TAPSILOG",   defaultName: "Special Taal" },
 ];
 
 const FALLBACK_IMAGES: Record<string, string> = {
@@ -40,12 +30,59 @@ const FALLBACK_IMAGES: Record<string, string> = {
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBvqTwZc8qcN-AzHK5_aTvSbiHvEJA6pLWO5WlUK2JReZpVPaFn1GMdQS_2CaWWam5GDfAO-N0Q9-TsuOD10x-XgkECYs9MrsqziKdowQeRzWTcKdpTDphjAgEN0YBieGWjs19aCYChPi7HRdmvYEpRJmzUJPhNQ2z6k-IkT9n3-pZDigBSwlURyDdKwO5vjoXIN-OBXrw98v-m9xOOQbgRrM9VnU4GcZkzdrbcrYlRUkd6C8u2_x9CtoR-SGNoFLkeJIpS3L_uG0U",
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+function splitProductName(fullName: string): { name: string; label: string } {
+  const parts = fullName.trim().split(" ");
+  if (parts.length > 1) {
+    return { label: parts[parts.length - 1].toUpperCase(), name: parts.slice(0, -1).join(" ") };
+  }
+  return { name: fullName, label: "" };
+}
+
+async function fetchFallbackProducts(): Promise<FeaturedProduct[]> {
+  const res = await fetch(`${API_URL}/api/products/categories`);
+  if (!res.ok) return [];
+  const categories = await res.json();
+  let allProducts: any[] = [];
+  if (Array.isArray(categories)) {
+    categories.forEach((cat: any) => {
+      if (Array.isArray(cat.products)) allProducts = [...allProducts, ...cat.products];
+    });
+  }
+  return TARGET_CONFIGS.map((config) => {
+    const matched = allProducts.find((p) => {
+      const pName = p.name?.toLowerCase() || "";
+      return config.search.split("|").some((s) => pName.includes(s));
+    });
+    if (matched) {
+      const { name, label } = splitProductName(matched.name);
+      return { name, label: label || config.defaultLabel, description: matched.description || "", price: matched.price, imageUrl: matched.imageUrl || FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
+    }
+    return { name: config.defaultName, label: config.defaultLabel, description: "", imageUrl: FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
+  });
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function HeroSection() {
   const [queryString, setQueryString] = useState("");
-  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
 
+  // Carousel state (infinite — we duplicate items)
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragDelta, setDragDelta] = useState(0);
+  const animatingRef = useRef(false);
+
+  // Lightbox
+  const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMounted, setModalMounted] = useState(false);
+
+  // ── Data fetch ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -54,284 +91,445 @@ export default function HeroSection() {
 
   useEffect(() => {
     setQueryString(window.location.search);
-
-    const fetchProducts = async () => {
+    const load = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/products/categories`
-        );
+        const res = await fetch(`${API_URL}/api/settings/portal`);
         if (res.ok) {
-          const categories = await res.json();
-          let allProducts: any[] = [];
-          if (Array.isArray(categories)) {
-            categories.forEach((cat: any) => {
-              if (Array.isArray(cat.products)) allProducts = [...allProducts, ...cat.products];
-            });
+          const s = await res.json();
+          if (Array.isArray(s.featuredProducts) && s.featuredProducts.length > 0) {
+            setProducts(
+              s.featuredProducts.map((p: any) => {
+                const { name, label } = splitProductName(p.name ?? "");
+                return { name, label, description: p.description || "", price: p.price, imageUrl: p.imageUrl || "" };
+              })
+            );
+            return;
           }
-
-          const mapped = TARGET_CONFIGS.map((config) => {
-            const matched = allProducts.find((p) => {
-              const pName = p.name?.toLowerCase() || "";
-              return config.search.split("|").some((s) => pName.includes(s));
-            });
-
-            let displayName = config.defaultName;
-            let displayLabel = config.defaultLabel;
-            if (matched) {
-              const parts = matched.name.split(" ");
-              if (parts.length > 1) {
-                displayLabel = parts[parts.length - 1].toUpperCase();
-                displayName = parts.slice(0, -1).join(" ");
-              } else {
-                displayName = matched.name;
-              }
-            }
-
-            return {
-              name: displayName,
-              label: displayLabel,
-              imageUrl:
-                matched?.imageUrl ||
-                FALLBACK_IMAGES[config.search.split("|")[0]] ||
-                "",
-              featured: config.featured,
-            };
-          });
-
-          setFeaturedProducts(mapped);
         }
-      } catch (e) {
-        console.error("Failed to fetch products for landing page", e);
+        setProducts(await fetchFallbackProducts());
+      } catch {
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchProducts();
+    load();
   }, []);
 
+  // ── Carousel helpers ───────────────────────────────────────────────────────
+  const count = products.length;
+
+  const goTo = useCallback(
+    (idx: number) => {
+      if (animatingRef.current || count === 0) return;
+      animatingRef.current = true;
+      setActiveIndex(((idx % count) + count) % count);
+      setTimeout(() => { animatingRef.current = false; }, 500);
+    },
+    [count]
+  );
+
+  const prev = useCallback(() => goTo(activeIndex - 1), [activeIndex, goTo]);
+  const next = useCallback(() => goTo(activeIndex + 1), [activeIndex, goTo]);
+
+  // Touch / Mouse drag
+  const onPointerDown = (clientX: number) => {
+    setIsDragging(true);
+    setDragStartX(clientX);
+    setDragDelta(0);
+  };
+  const onPointerMove = (clientX: number) => {
+    if (!isDragging) return;
+    setDragDelta(clientX - dragStartX);
+  };
+  const onPointerUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (dragDelta < -60) next();
+    else if (dragDelta > 60) prev();
+    setDragDelta(0);
+  };
+
+  // Keyboard nav
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [prev, next]);
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  const openModal = (p: FeaturedProduct) => {
+    setSelectedProduct(p);
+    setModalMounted(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setModalVisible(true)));
+    document.body.style.overflow = "hidden";
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    setTimeout(() => { setModalMounted(false); setSelectedProduct(null); document.body.style.overflow = ""; }, 350);
+  };
+
+  // ── Card layout ────────────────────────────────────────────────────────────
+  // Each card gets a slot offset from active: -2, -1, 0, +1, +2
+  // We show slots -1, 0, +1 visibly; further slots are hidden
+  function getSlot(idx: number): number {
+    if (count === 0) return 0;
+    let slot = idx - activeIndex;
+    // Wrap to [-count/2, count/2]
+    while (slot > Math.floor(count / 2)) slot -= count;
+    while (slot < -Math.floor(count / 2)) slot += count;
+    return slot;
+  }
+
+  const FALLBACK_IMG = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop";
+
   return (
-    <main
-      className="relative min-h-screen flex flex-col pt-28 pb-0 overflow-hidden"
-      style={{ background: "#0a0a0a" }}
-    >
-      {/* Ambient radial glow */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(232,98,26,0.12) 0%, transparent 70%)",
-        }}
-      />
-
-      {/* Ghost watermark — scroll-linked horizontal parallax */}
-      <div
-        className="absolute inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none select-none z-0 overflow-hidden"
-        style={{ opacity: 0.045 }}
+    <>
+      <main
+        className="relative min-h-screen flex flex-col pt-28 pb-0 overflow-hidden"
+        style={{ background: "#0a0a0a" }}
       >
-        <span
-          className="font-black-han whitespace-nowrap text-white leading-none block"
-          style={{
-            fontSize: "clamp(6rem, 18vw, 18rem)",
-            letterSpacing: "-0.02em",
-            transform: `translateX(${-scrollY * 0.4}px)`,
-            willChange: "transform",
-          }}
+        {/* Ambient radial glow */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(232,98,26,0.12) 0%, transparent 70%)" }}
+        />
+
+        {/* Ghost watermark parallax */}
+        <div
+          className="absolute inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none select-none z-0 overflow-hidden"
+          style={{ opacity: 0.045 }}
         >
-          RENDEZVOUS
-        </span>
-      </div>
-
-      <div className="relative z-10 container mx-auto px-6 flex flex-col items-center">
-
-        {/* Left sidebar tagline */}
-        <div className="absolute left-6 xl:left-10 top-1/2 -translate-y-1/2 hidden xl:flex flex-col max-w-[160px] animate-stagger-1">
-          <div className="relative pl-4 border-l-2" style={{ borderColor: "#E8621A" }}>
-            <span
-              className="absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full"
-              style={{ background: "#E8621A" }}
-            />
-            <p
-              className="text-[9px] leading-relaxed tracking-widest uppercase font-semibold"
-              style={{ color: "rgba(255,255,255,0.45)" }}
-            >
-              Discover the taste of freshly cooked meals and savory flavors in every bite.
-            </p>
-          </div>
-        </div>
-
-        {/* Headline block */}
-        <div className="relative text-center mb-10 animate-stagger-2">
-          <h1
-            className="font-black-han uppercase leading-[0.88] tracking-tight text-white"
-            style={{ fontSize: "clamp(3.5rem, 10vw, 9rem)" }}
-          >
-            BEST SELLERS
-            <br />
-            IN TOWN
-          </h1>
-
-          {/* Cursive "Order Now!" stamp */}
           <span
-            className="absolute font-dancing animate-wobble-pulse pointer-events-none"
+            className="font-black-han whitespace-nowrap text-white leading-none block"
             style={{
-              color: "#E8621A",
-              fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
-              bottom: "-0.6em",
-              right: "clamp(-1rem, 2vw, 3rem)",
-              textShadow: "0 0 30px rgba(232,98,26,0.5)",
-              transformOrigin: "center center",
+              fontSize: "clamp(6rem, 18vw, 18rem)",
+              letterSpacing: "-0.02em",
+              transform: `translateX(${-scrollY * 0.4}px)`,
+              willChange: "transform",
             }}
           >
-            Order Now!
+            RENDEZVOUS
           </span>
         </div>
 
-        {/* Subtitle */}
-        <p
-          className="text-xs font-bold tracking-[0.35em] uppercase mb-12 animate-stagger-3"
-          style={{ color: "rgba(255,255,255,0.4)" }}
-        >
-          Our top dishes served fresh and hot
-        </p>
+        <div className="relative z-10 container mx-auto px-6 flex flex-col items-center">
 
-        {/* Food Cards */}
-        <div className="flex flex-col md:flex-row items-end justify-center gap-6 w-full max-w-5xl relative z-10 min-h-[380px]">
-          {isLoading
-            ? [0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className={`animate-pulse rounded-3xl ${
-                    i === 1 ? "w-4/5 md:w-[36%] md:-translate-y-8" : "w-3/4 md:w-[30%]"
-                  }`}
-                  style={{ background: "#1a1008", height: i === 1 ? 340 : 290 }}
-                />
-              ))
-            : featuredProducts.map((product, idx) => (
-                <FoodCard key={product.label} product={product} index={idx} />
-              ))}
-        </div>
+          {/* Sidebar tagline */}
+          <div className="absolute left-6 xl:left-10 top-1/2 -translate-y-1/2 hidden xl:flex flex-col max-w-[160px] animate-stagger-1">
+            <div className="relative pl-4 border-l-2" style={{ borderColor: "#E8621A" }}>
+              <span className="absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full" style={{ background: "#E8621A" }} />
+              <p className="text-[9px] leading-relaxed tracking-widest uppercase font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>
+                Discover the taste of freshly cooked meals and savory flavors in every bite.
+              </p>
+            </div>
+          </div>
 
-        {/* CTA Button */}
-        <div className="mt-16 mb-4 z-20 animate-stagger-5">
-          <Link
-            href={`/menu${queryString}`}
-            className="inline-block px-14 py-5 rounded-full font-black text-white text-base uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)",
-              boxShadow: "0 0 40px rgba(232,98,26,0.35)",
-            }}
+          {/* Headline */}
+          <div className="relative text-center mb-10 animate-stagger-2">
+            <h1
+              className="font-black-han uppercase leading-[0.88] tracking-tight text-white"
+              style={{ fontSize: "clamp(3.5rem, 10vw, 9rem)" }}
+            >
+              BEST SELLERS
+              <br />
+              IN TOWN
+            </h1>
+            <span
+              className="absolute font-dancing animate-wobble-pulse pointer-events-none"
+              style={{
+                color: "#E8621A",
+                fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
+                bottom: "-0.6em",
+                right: "clamp(-1rem, 2vw, 3rem)",
+                textShadow: "0 0 30px rgba(232,98,26,0.5)",
+                transformOrigin: "center center",
+              }}
+            >
+              Order Now!
+            </span>
+          </div>
+
+          {/* Subtitle */}
+          <p
+            className="text-xs font-bold tracking-[0.35em] uppercase mb-12 animate-stagger-3"
+            style={{ color: "rgba(255,255,255,0.4)" }}
           >
-            ORDER NOW
-          </Link>
+            Our top dishes served fresh and hot
+          </p>
+
+          {/* ── Coverflow Carousel ─────────────────────────────────────────── */}
+          <div
+            className="relative w-full flex items-center justify-center animate-stagger-3"
+            style={{ height: 400, perspective: "1200px" }}
+            // Touch events
+            onTouchStart={(e) => onPointerDown(e.touches[0].clientX)}
+            onTouchMove={(e) => onPointerMove(e.touches[0].clientX)}
+            onTouchEnd={onPointerUp}
+            // Mouse drag
+            onMouseDown={(e) => onPointerDown(e.clientX)}
+            onMouseMove={(e) => onPointerMove(e.clientX)}
+            onMouseUp={onPointerUp}
+            onMouseLeave={onPointerUp}
+          >
+            {isLoading
+              ? /* Skeletons */
+                [-1, 0, 1].map((slot) => (
+                  <div
+                    key={slot}
+                    className="absolute rounded-3xl animate-pulse"
+                    style={{
+                      width: slot === 0 ? 260 : 200,
+                      height: slot === 0 ? 360 : 290,
+                      background: "#1a1008",
+                      transform: `translateX(${slot * 220}px) scale(${slot === 0 ? 1 : 0.82}) translateZ(${slot === 0 ? 0 : -80}px)`,
+                      opacity: slot === 0 ? 1 : 0.4,
+                      transition: "all 0.5s ease",
+                    }}
+                  />
+                ))
+              : products.map((product, idx) => {
+                  const slot = getSlot(idx);
+                  const isActive = slot === 0;
+                  const isVisible = Math.abs(slot) <= 1;
+                  // Side cards shift left/right
+                  const horizontalShift = slot * 230 + (isDragging ? dragDelta * 0.4 : 0);
+                  const scale = isActive ? 1 : 0.8;
+                  const opacity = isActive ? 1 : Math.abs(slot) === 1 ? 0.55 : 0;
+                  const zIndex = isActive ? 20 : Math.abs(slot) === 1 ? 10 : 0;
+                  const rotateY = slot === -1 ? 12 : slot === 1 ? -12 : 0;
+                  const tz = isActive ? 0 : -60;
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => { if (isActive && !isDragging && Math.abs(dragDelta) < 10) openModal(product); else if (!isActive) goTo(idx); }}
+                      className="absolute rounded-3xl overflow-hidden cursor-pointer select-none"
+                      style={{
+                        width: 260,
+                        height: 360,
+                        transform: `translateX(${horizontalShift}px) scale(${scale}) rotateY(${rotateY}deg) translateZ(${tz}px)`,
+                        opacity,
+                        zIndex,
+                        transition: isDragging ? "opacity 0.15s ease, box-shadow 0.2s ease" : "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                        background: "#140c06",
+                        border: isActive ? "2px solid rgba(232,98,26,0.6)" : "1px solid rgba(255,255,255,0.07)",
+                        boxShadow: isActive
+                          ? "0 0 60px -10px rgba(232,98,26,0.55), 0 30px 60px -20px rgba(0,0,0,0.8)"
+                          : "none",
+                        visibility: isVisible ? "visible" : "hidden",
+                        pointerEvents: isVisible ? "auto" : "none",
+                        willChange: "transform, opacity",
+                      }}
+                    >
+                      {/* Image */}
+                      <div className="relative w-full" style={{ height: 260 }}>
+                        <img
+                          src={product.imageUrl || FALLBACK_IMG}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          draggable={false}
+                          onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
+                        />
+                        {/* Gradient overlay */}
+                        <div
+                          className="absolute inset-0"
+                          style={{ background: "linear-gradient(to top, rgba(20,12,6,0.98) 0%, rgba(20,12,6,0.15) 50%, transparent 100%)" }}
+                        />
+                        {/* Active glow from bottom */}
+                        {isActive && (
+                          <div
+                            className="absolute inset-0"
+                            style={{ background: "radial-gradient(ellipse at 50% 110%, rgba(232,98,26,0.35) 0%, transparent 60%)" }}
+                          />
+                        )}
+                        {/* "Tap to view" */}
+                        {isActive && (
+                          <div
+                            className="absolute inset-0 flex items-end justify-center pb-4 opacity-0 hover:opacity-100 transition-opacity duration-300"
+                          >
+                            <span
+                              className="text-white text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full"
+                              style={{ background: "rgba(232,98,26,0.85)" }}
+                            >
+                              View Details
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card footer */}
+                      <div className="px-5 pt-3 pb-4 flex flex-col items-start gap-1.5">
+                        <span className="font-black uppercase tracking-tight text-white text-lg leading-tight line-clamp-1">
+                          {product.name}
+                        </span>
+                        <span
+                          className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border"
+                          style={{ color: "#E8621A", borderColor: "#E8621A", background: "rgba(232,98,26,0.08)" }}
+                        >
+                          {product.label}
+                        </span>
+                        {product.price !== undefined && product.price > 0 && (
+                          <span className="text-sm font-bold" style={{ color: "rgba(232,98,26,0.85)" }}>
+                            ₱{product.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+            {/* ── Arrow Buttons ──────────────────────────────────────────── */}
+            {!isLoading && count > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); prev(); }}
+                  aria-label="Previous"
+                  className="absolute left-2 md:left-6 z-30 flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-110"
+                  style={{ background: "rgba(20,12,6,0.85)", borderColor: "rgba(232,98,26,0.4)", color: "#E8621A" }}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); next(); }}
+                  aria-label="Next"
+                  className="absolute right-2 md:right-6 z-30 flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-110"
+                  style={{ background: "rgba(20,12,6,0.85)", borderColor: "rgba(232,98,26,0.4)", color: "#E8621A" }}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Dot indicators */}
+          {!isLoading && count > 1 && (
+            <div className="flex gap-2 mt-6">
+              {products.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: i === activeIndex ? 24 : 8,
+                    height: 8,
+                    background: i === activeIndex ? "#E8621A" : "rgba(255,255,255,0.2)",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* CTA Button */}
+          <div className="mt-12 mb-4 z-20 animate-stagger-5">
+            <Link
+              href={`/menu${queryString}`}
+              className="inline-block px-14 py-5 rounded-full font-black text-white text-base uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)",
+                boxShadow: "0 0 40px rgba(232,98,26,0.35)",
+              }}
+            >
+              ORDER NOW
+            </Link>
+          </div>
         </div>
-      </div>
 
-      {/* Wavy SVG divider */}
-      <div className="relative w-full overflow-hidden leading-none mt-auto" style={{ height: 120 }}>
-        <svg
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          className="absolute bottom-0 left-0 w-full h-full"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,60 C180,110 360,10 540,60 C720,110 900,10 1080,60 C1260,110 1380,30 1440,60 L1440,120 L0,120 Z"
-            fill="#E8621A"
-            opacity="0.18"
-          />
-          <path
-            d="M0,80 C200,30 400,120 600,70 C800,20 1000,110 1200,65 C1320,40 1400,90 1440,80 L1440,120 L0,120 Z"
-            fill="#8B3A00"
-            opacity="0.55"
-          />
-        </svg>
-      </div>
-    </main>
-  );
-}
+        {/* Wavy SVG divider */}
+        <div className="relative w-full overflow-hidden leading-none mt-auto" style={{ height: 120 }}>
+          <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,60 C180,110 360,10 540,60 C720,110 900,10 1080,60 C1260,110 1380,30 1440,60 L1440,120 L0,120 Z" fill="#E8621A" opacity="0.18" />
+            <path d="M0,80 C200,30 400,120 600,70 C800,20 1000,110 1200,65 C1320,40 1400,90 1440,80 L1440,120 L0,120 Z" fill="#8B3A00" opacity="0.55" />
+          </svg>
+        </div>
+      </main>
 
-/* ─── Food Card ─────────────────────────────────────────────────────────────── */
-function FoodCard({
-  product,
-  index,
-}: {
-  product: FeaturedProduct;
-  index: number;
-}) {
-  const staggerClass = ["animate-stagger-3", "animate-stagger-4", "animate-stagger-3"][index];
-
-  return (
-    <div
-      className={`group relative flex flex-col rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 hover:scale-105 ${staggerClass} ${
-        product.featured
-          ? "w-4/5 md:w-[36%] md:-translate-y-8 z-20"
-          : "w-3/4 md:w-[30%]"
-      }`}
-      style={{
-        background: "#140c06",
-        border: product.featured
-          ? "2px solid rgba(232,98,26,0.45)"
-          : "1px solid rgba(255,255,255,0.06)",
-        boxShadow: product.featured
-          ? "0 0 50px -10px rgba(232,98,26,0.35)"
-          : "none",
-        transition: "box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow =
-          "0 0 60px -8px rgba(232,98,26,0.55)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(232,98,26,0.7)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow = product.featured
-          ? "0 0 50px -10px rgba(232,98,26,0.35)"
-          : "none";
-        (e.currentTarget as HTMLDivElement).style.borderColor = product.featured
-          ? "rgba(232,98,26,0.45)"
-          : "rgba(255,255,255,0.06)";
-      }}
-    >
-      {/* Food image */}
-      <div className={`relative w-full overflow-hidden ${product.featured ? "h-64" : "h-52"}`}>
-        <img
-          src={product.imageUrl}
-          alt={`${product.name} ${product.label}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop";
-          }}
-        />
-        {/* Warm gradient overlay */}
+      {/* ── Lightbox Modal ─────────────────────────────────────────────────── */}
+      {modalMounted && selectedProduct && (
         <div
-          className="absolute inset-0"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{
-            background:
-              "linear-gradient(to top, rgba(20,12,6,0.95) 0%, rgba(20,12,6,0.3) 50%, transparent 100%)",
+            transition: "opacity 0.35s ease",
+            opacity: modalVisible ? 1 : 0,
+            backdropFilter: modalVisible ? "blur(18px) brightness(0.3)" : "blur(0px) brightness(1)",
+            background: modalVisible ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0)",
           }}
-        />
-      </div>
+          onClick={closeModal}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-3xl overflow-hidden"
+            style={{
+              background: "#140c06",
+              border: "1.5px solid rgba(232,98,26,0.45)",
+              boxShadow: "0 0 100px -10px rgba(232,98,26,0.65)",
+              transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease",
+              transform: modalVisible ? "scale(1) translateY(0)" : "scale(0.88) translateY(28px)",
+              opacity: modalVisible ? 1 : 0,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 hover:scale-110"
+              style={{ background: "rgba(232,98,26,0.15)", border: "1px solid rgba(232,98,26,0.3)", color: "#E8621A" }}
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-      {/* Card footer */}
-      <div className="px-5 pt-3 pb-5 flex flex-col items-start gap-2">
-        <span
-          className="font-black uppercase tracking-tight text-white"
-          style={{ fontSize: product.featured ? "1.35rem" : "1.1rem" }}
-        >
-          {product.name}
-        </span>
-        <span
-          className="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
-          style={{
-            color: "#E8621A",
-            borderColor: "#E8621A",
-            background: "rgba(232,98,26,0.08)",
-          }}
-        >
-          {product.label}
-        </span>
-      </div>
-    </div>
+            {/* Image */}
+            <div className="relative w-full" style={{ height: 290 }}>
+              <img
+                src={selectedProduct.imageUrl || FALLBACK_IMG}
+                alt={selectedProduct.name}
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
+              />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,12,6,1) 0%, rgba(20,12,6,0.18) 60%, transparent 100%)" }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(232,98,26,0.32) 0%, transparent 65%)" }} />
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-4">
+              <span className="inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" style={{ color: "#E8621A", borderColor: "#E8621A", background: "rgba(232,98,26,0.08)" }}>
+                {selectedProduct.label || "Best Seller"}
+              </span>
+
+              <h2 className="font-black-han uppercase text-white leading-tight" style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)" }}>
+                {selectedProduct.name}
+              </h2>
+
+              {selectedProduct.description && (
+                <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  {selectedProduct.description}
+                </p>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                {selectedProduct.price !== undefined && selectedProduct.price > 0 && (
+                  <span className="text-2xl font-black" style={{ color: "#E8621A" }}>
+                    ₱{selectedProduct.price.toFixed(2)}
+                  </span>
+                )}
+                <Link
+                  href={`/menu${queryString}`}
+                  onClick={closeModal}
+                  className="ml-auto inline-flex items-center gap-2 px-6 py-3 rounded-full font-black text-white text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
+                  style={{ background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)", boxShadow: "0 0 30px rgba(232,98,26,0.3)" }}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Order Now
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

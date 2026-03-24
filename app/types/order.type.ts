@@ -38,6 +38,7 @@ export interface CustomerOrder {
   customerId?: string;
   items: CustomerOrderItem[];
   orderNote?: string;
+  vehicleIdentification?: string; // Drive-thru only: e.g. "red Toyota", "blue hat"
   orderType: "dine-in" | "takeaway";
   tableNumber?: string;
   subtotal: number;

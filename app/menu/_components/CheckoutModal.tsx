@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Smartphone } from "lucide-react";
+import { X, Loader2, Smartphone, Car } from "lucide-react";
 import { CustomerOrder, CustomerOrderItem } from "@/app/types/order.type";
 
 interface SessionData {
@@ -32,14 +32,21 @@ export function CheckoutModal({
   sessionData,
 }: CheckoutModalProps) {
   const [orderNote, setOrderNote] = useState("");
+  const [vehicleIdentification, setVehicleIdentification] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const customerName = sessionData?.customerName || "Guest";
   const tableId = sessionData?.tableId;
   const sessionId = sessionData?.sessionId;
+  const isDriveThru = sessionData?.qrType === "drive-thru";
 
   const handleGCashPay = async () => {
+    // Drive-thru requires identification before payment
+    if (isDriveThru && !vehicleIdentification.trim()) {
+      setError("Please tell us how to identify you (e.g. car color, name, etc.)");
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -62,6 +69,8 @@ export function CheckoutModal({
           tableNumber: tableId || undefined,
           items,
           orderNote: orderNote.trim() || undefined,
+          vehicleIdentification: isDriveThru ? vehicleIdentification.trim() : undefined,
+          qrType: sessionData?.qrType || undefined,
           orderType: tableId ? "dine-in" : "takeaway",
           subtotal: total,
           total,
@@ -184,6 +193,27 @@ export function CheckoutModal({
             </span>
             <span className="text-white font-medium">{customerName}</span>
           </div>
+
+          {/* Drive-Thru Identification Field */}
+          {isDriveThru && (
+            <div>
+              <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                <Car className="w-3.5 h-3.5 text-blue-400" />
+                <span>How do we identify you to deliver your order?</span>
+                <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={vehicleIdentification}
+                onChange={(e) => setVehicleIdentification(e.target.value)}
+                placeholder="e.g. Red Toyota, Blue shirt, Name: Juan"
+                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/15 transition-all"
+              />
+              <p className="text-white/25 text-[11px] mt-1.5">
+                This helps our staff bring your order to the right vehicle.
+              </p>
+            </div>
+          )}
 
           {/* Notes */}
           <div>
