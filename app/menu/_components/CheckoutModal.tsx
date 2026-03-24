@@ -42,7 +42,6 @@ export function CheckoutModal({
   const isDriveThru = sessionData?.qrType === "drive-thru";
 
   const handleGCashPay = async () => {
-    // Drive-thru requires identification before payment
     if (isDriveThru && !vehicleIdentification.trim()) {
       setError("Please tell us how to identify you (e.g. car color, name, etc.)");
       return;
@@ -54,9 +53,6 @@ export function CheckoutModal({
       const orderId = `customer-${Date.now()}`;
       const effectiveSessionId = sessionId || orderId;
 
-      // 1. Synchronously create the order in MongoDB via HTTP.
-      //    This guarantees the order exists BEFORE the PayMongo source is created,
-      //    so the webhook can always find it when it calls /internal/payment-confirmed.
       const orderRes = await fetch("/api/order/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,12 +75,8 @@ export function CheckoutModal({
       });
 
       const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData?.error || "Failed to register order");
 
-      if (!orderRes.ok) {
-        throw new Error(orderData?.error || "Failed to register order");
-      }
-
-      // 2. Create a PayMongo GCash Source.
       const payRes = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,29 +91,21 @@ export function CheckoutModal({
       });
 
       const payData = await payRes.json();
+      if (!payRes.ok || !payData.checkoutUrl) throw new Error(payData.error || "Failed to create GCash payment");
 
-      if (!payRes.ok || !payData.checkoutUrl) {
-        throw new Error(payData.error || "Failed to create GCash payment");
-      }
-
-      // 3. Store session info so /payment/success can restore the right room.
       const stored = sessionStorage.getItem("orderSession");
       if (stored) {
         try {
           const sess = JSON.parse(stored);
           sess.sessionId = effectiveSessionId;
           sess.lastOrderId = orderId;
-          // Ensure we persist the customerId for recovery
           if (sessionData?.customerId) sess.customerId = sessionData.customerId;
           sessionStorage.setItem("orderSession", JSON.stringify(sess));
-          console.log("[CheckoutModal] Persisted session for redirect:", sess);
         } catch (e) {
           console.error("[CheckoutModal] Failed to update session:", e);
         }
       }
 
-      // 4. Redirect to GCash — do NOT call onConfirm here since that
-      //    would duplicate the order creation via socket.
       sessionStorage.setItem("isRedirectingToPayment", "true");
       clearCart();
       window.location.href = payData.checkoutUrl;
@@ -132,16 +116,17 @@ export function CheckoutModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-background rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-60 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm">
+      {/* Sheet slides up from bottom on mobile, centered on sm+ */}
+      <div className="w-full sm:max-w-md bg-background rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden">
         {/* Amber top bar */}
-        <div className="h-1 w-full bg-gradient-to-r from-primary via-primary/50 to-primary" />
+        <div className="h-1 w-full bg-linear-to-r from-primary via-primary/50 to-primary shrink-0" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+        {/* Header — fixed, never scrolls */}
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 shrink-0">
           <div>
-            <h2 className="text-white font-black text-xl uppercase tracking-widest">
-              Confirm & Pay
+            <h2 className="text-white font-black text-lg sm:text-xl uppercase tracking-widest">
+              Confirm &amp; Pay
             </h2>
             <p className="text-white/40 text-xs mt-1">
               {items.length} item(s) · ₱{total.toFixed(2)}
@@ -149,124 +134,122 @@ export function CheckoutModal({
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors touch-manipulation"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Order summary */}
-        <div className="mx-6 mb-4 bg-white/5 rounded-2xl p-3 max-h-32 overflow-y-auto border border-white/10">
-          {items.map((item) => (
-            <div key={item._id} className="flex justify-between text-sm py-1">
-              <span className="text-white/70 font-medium">
-                {item.name} × {item.quantity}
-              </span>
-              <span className="text-primary font-bold">
-                ₱{(item.price * item.quantity).toFixed(2)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="px-6 pb-6 space-y-4">
-          {/* Table info */}
-          {tableId && (
-            <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
-              <span className="text-white/40 text-xs font-bold uppercase tracking-widest">
-                Table
-              </span>
-              <span className="text-white font-bold">
-                {customerName.startsWith("TABLE-#")
-                  ? customerName.replace("TABLE-", "")
-                  : tableId.match(/\d+/)
-                    ? `#${tableId.match(/\d+/)?.[0]}`
-                    : tableId}
-              </span>
-            </div>
-          )}
-
-          {/* Customer name */}
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
-            <span className="text-white/40 text-xs font-bold uppercase tracking-widest">
-              Name
-            </span>
-            <span className="text-white font-medium">{customerName}</span>
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {/* Order summary */}
+          <div className="mx-5 sm:mx-6 mb-4 bg-white/5 rounded-2xl p-3 max-h-24 overflow-y-auto border border-white/10">
+            {items.map((item) => (
+              <div key={item._id} className="flex justify-between text-sm py-1">
+                <span className="text-white/70 font-medium">
+                  {item.name} × {item.quantity}
+                </span>
+                <span className="text-primary font-bold shrink-0 ml-2">
+                  ₱{(item.price * item.quantity).toFixed(2)}
+                </span>
+              </div>
+            ))}
           </div>
 
-          {/* Drive-Thru Identification Field */}
-          {isDriveThru && (
-            <div>
-              <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                <Car className="w-3.5 h-3.5 text-blue-400" />
-                <span>How do we identify you to deliver your order?</span>
-                <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={vehicleIdentification}
-                onChange={(e) => setVehicleIdentification(e.target.value)}
-                placeholder="e.g. Red Toyota, Blue shirt, Name: Juan"
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/15 transition-all"
-              />
-              <p className="text-white/25 text-[11px] mt-1.5">
-                This helps our staff bring your order to the right vehicle.
-              </p>
-            </div>
-          )}
-
-          {/* Notes */}
-          <div>
-            <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">
-              Special Instructions
-            </label>
-            <textarea
-              value={orderNote}
-              onChange={(e) => setOrderNote(e.target.value)}
-              placeholder="Any special requests?"
-              rows={2}
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all resize-none"
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <p className="text-red-400 text-xs text-center bg-red-500/10 rounded-xl px-4 py-2 border border-red-500/20">
-              {error}
-            </p>
-          )}
-
-          {/* Total */}
-          <div className="flex items-center justify-between py-3 border-t border-white/10">
-            <span className="text-white/50 text-sm uppercase tracking-widest font-bold">
-              Total
-            </span>
-            <span className="text-primary font-black text-2xl">
-              ₱{total.toFixed(2)}
-            </span>
-          </div>
-
-          {/* GCash Pay button */}
-          <button
-            onClick={handleGCashPay}
-            disabled={loading}
-            className="w-full bg-blue-500 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-400 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Redirecting to
-                GCash…
-              </>
-            ) : (
-              <>
-                <Smartphone className="w-4 h-4" /> Pay with GCash
-              </>
+          <div className="px-5 sm:px-6 pb-6 space-y-4">
+            {/* Table info */}
+            {tableId && (
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+                <span className="text-white/40 text-xs font-bold uppercase tracking-widest shrink-0">
+                  Table
+                </span>
+                <span className="text-white font-bold">
+                  {customerName.startsWith("TABLE-#")
+                    ? customerName.replace("TABLE-", "")
+                    : tableId.match(/\d+/)
+                      ? `#${tableId.match(/\d+/)?.[0]}`
+                      : tableId}
+                </span>
+              </div>
             )}
-          </button>
 
-          <p className="text-center text-white/20 text-[11px]">
-            You will be redirected to GCash to complete your payment.
-          </p>
+            {/* Customer name */}
+            <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+              <span className="text-white/40 text-xs font-bold uppercase tracking-widest shrink-0">
+                Name
+              </span>
+              <span className="text-white font-medium truncate">{customerName}</span>
+            </div>
+
+            {/* Drive-Thru Identification */}
+            {isDriveThru && (
+              <div>
+                <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2 flex-wrap">
+                  <Car className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>How do we identify you?</span>
+                  <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={vehicleIdentification}
+                  onChange={(e) => setVehicleIdentification(e.target.value)}
+                  placeholder="e.g. Red Toyota, Blue shirt, Name: Juan"
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/15 transition-all"
+                />
+                <p className="text-white/25 text-[11px] mt-1.5">
+                  Helps our staff deliver to the right vehicle.
+                </p>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div>
+              <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">
+                Special Instructions
+              </label>
+              <textarea
+                value={orderNote}
+                onChange={(e) => setOrderNote(e.target.value)}
+                placeholder="Any special requests?"
+                rows={2}
+                className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all resize-none"
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p className="text-red-400 text-xs text-center bg-red-500/10 rounded-xl px-4 py-2 border border-red-500/20">
+                {error}
+              </p>
+            )}
+
+            {/* Total */}
+            <div className="flex items-center justify-between py-3 border-t border-white/10">
+              <span className="text-white/50 text-sm uppercase tracking-widest font-bold">
+                Total
+              </span>
+              <span className="text-primary font-black text-2xl">
+                ₱{total.toFixed(2)}
+              </span>
+            </div>
+
+            {/* GCash Pay button */}
+            <button
+              onClick={handleGCashPay}
+              disabled={loading}
+              className="w-full bg-blue-500 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-400 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 touch-manipulation"
+            >
+              {loading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to GCash…</>
+              ) : (
+                <><Smartphone className="w-4 h-4" /> Pay with GCash</>
+              )}
+            </button>
+
+            <p className="text-center text-white/20 text-[11px]">
+              You will be redirected to GCash to complete your payment.
+            </p>
+          </div>
         </div>
       </div>
     </div>

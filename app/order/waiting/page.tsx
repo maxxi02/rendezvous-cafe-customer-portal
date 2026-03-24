@@ -288,7 +288,7 @@ export default function WaitingPage() {
   const stepIdx = getStepIndex(queueStatus);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-10 p-6 overflow-x-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-6 sm:pt-10 p-4 sm:p-6 overflow-x-hidden">
       {/* Ambient glow */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -313,7 +313,7 @@ export default function WaitingPage() {
         </div>
 
         {/* Status card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-5">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-8 flex flex-col items-center text-center gap-4 sm:gap-5">
           {/* Animated icon */}
           <div className="relative">
             <div
@@ -352,13 +352,13 @@ export default function WaitingPage() {
         </div>
 
         {/* Progress steps */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between relative">
-            {/* Connecting line */}
-            <div className="absolute top-4 left-0 right-0 h-px bg-white/10 mx-8" />
+            {/* Connecting line bg */}
+            <div className="absolute top-4 left-0 right-0 h-px bg-white/10" style={{ marginLeft: '16px', marginRight: '16px' }} />
             <div
-              className="absolute top-4 left-0 h-px bg-primary transition-all duration-700 mx-8"
-              style={{ right: `${(1 - stepIdx / (STEPS.length - 1)) * 100}%` }}
+              className="absolute top-4 left-0 h-px bg-primary transition-all duration-700"
+              style={{ marginLeft: '16px', marginRight: '16px', right: `${(1 - stepIdx / (STEPS.length - 1)) * 100}%` }}
             />
             {STEPS.map((step, i) => {
               const done = i <= stepIdx;

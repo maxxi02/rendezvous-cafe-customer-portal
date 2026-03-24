@@ -481,33 +481,33 @@ function MenuContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-white/10 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-white font-black text-2xl uppercase tracking-widest">
-                RENDEZVOUS<span className="text-primary">.</span>
+        {/* Top bar */}
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-white font-black text-lg sm:text-2xl uppercase tracking-widest truncate">
+                RNDZVS<span className="hidden sm:inline">OUS</span><span className="text-primary">.</span>
               </h1>
-              <p className="text-white/40 text-xs tracking-widest uppercase mt-0.5">
+              <p className="text-white/40 text-[10px] sm:text-xs tracking-widest uppercase mt-0.5 hidden xs:block">
                 Our Menu
               </p>
             </div>
           </div>
 
           {/* Cart button */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <MenuAuthActions openAuth={() => setAuthOpen(true)} />
             <button
               onClick={() => setShowCart(true)}
-              className="relative flex items-center gap-3 bg-primary text-background px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/30"
+              className="relative flex items-center gap-2 sm:gap-3 bg-primary text-background px-3 sm:px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest hover:bg-white active:scale-95 transition-all duration-200 shadow-lg shadow-primary/30"
             >
-              <ShoppingCart className="w-4 h-4" />
-              <span>Cart</span>
+              <ShoppingCart className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Cart</span>
               {cartCount > 0 && (
                 <>
-                  <span className="font-black">·</span>
-                  <span>₱{cartTotal.toFixed(0)}</span>
+                  <span className="hidden sm:inline font-black">·</span>
+                  <span className="hidden sm:inline">₱{cartTotal.toFixed(0)}</span>
                   <span className="absolute -top-2 -right-2 h-5 w-5 bg-background text-primary text-xs rounded-full flex items-center justify-center font-black border-2 border-primary">
                     {cartCount}
                   </span>
@@ -518,7 +518,7 @@ function MenuContent() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Menu type filter */}
         <div className="flex gap-3 mb-6">
           {(["all", "food", "drink"] as const).map((type) => (
@@ -578,7 +578,7 @@ function MenuContent() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {filteredProducts.map((product) => {
               const cartItem = cart.find(item => item._id === product._id);
               return (
@@ -594,14 +594,14 @@ function MenuContent() {
         )}
       </div>
 
-      {/* Cart drawer */}
+      {/* Mobile cart bottom sheet */}
       {showCart && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowCart(false)}
           />
-          <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background border-l border-white/10 flex flex-col shadow-2xl">
+          <div className="relative bg-background border-t border-white/10 flex flex-col shadow-2xl rounded-t-3xl" style={{ maxHeight: "85dvh" }}>
             <Cart
               items={cart}
               onUpdate={updateCart}
