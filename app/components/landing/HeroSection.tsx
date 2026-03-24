@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { X, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,10 +35,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 function splitProductName(fullName: string): { name: string; label: string } {
   const parts = fullName.trim().split(" ");
-  if (parts.length > 1) {
-    return { label: parts[parts.length - 1].toUpperCase(), name: parts.slice(0, -1).join(" ") };
-  }
-  return { name: fullName, label: "" };
+  const label = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : "";
+  // name is always the FULL product name — we never truncate it for display
+  return { name: fullName, label };
 }
 
 async function fetchFallbackProducts(): Promise<FeaturedProduct[]> {
@@ -56,15 +56,16 @@ async function fetchFallbackProducts(): Promise<FeaturedProduct[]> {
       return config.search.split("|").some((s) => pName.includes(s));
     });
     if (matched) {
-      const { name, label } = splitProductName(matched.name);
-      return { name, label: label || config.defaultLabel, description: matched.description || "", price: matched.price, imageUrl: matched.imageUrl || FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
+      const { label } = splitProductName(matched.name);
+      return { name: matched.name, label: label || config.defaultLabel, description: matched.description || "", price: matched.price, imageUrl: matched.imageUrl || FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
     }
-    return { name: config.defaultName, label: config.defaultLabel, description: "", imageUrl: FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
+    return { name: `${config.defaultName} ${config.defaultLabel}`, label: config.defaultLabel, description: "", imageUrl: FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
   });
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function HeroSection() {
+  const router = useRouter();
   const [queryString, setQueryString] = useState("");
   const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -364,7 +365,7 @@ export default function HeroSection() {
 
                       {/* Card footer */}
                       <div className="px-5 pt-3 pb-4 flex flex-col items-start gap-1.5">
-                        <span className="font-black uppercase tracking-tight text-white text-lg leading-tight line-clamp-1">
+                        <span className="font-black uppercase tracking-tight text-white text-sm sm:text-base leading-snug">
                           {product.name}
                         </span>
                         <span
@@ -516,15 +517,31 @@ export default function HeroSection() {
                     ₱{selectedProduct.price.toFixed(2)}
                   </span>
                 )}
-                <Link
-                  href={`/menu${queryString}`}
-                  onClick={closeModal}
+                <button
+                  onClick={() => {
+                    // Save product to sessionStorage so menu page can auto-add it to cart
+                    if (selectedProduct) {
+                      sessionStorage.setItem(
+                        "pendingCartItem",
+                        JSON.stringify({
+                          _id: selectedProduct._id || selectedProduct.name,
+                          name: selectedProduct.name,
+                          price: selectedProduct.price ?? 0,
+                          imageUrl: selectedProduct.imageUrl,
+                          description: selectedProduct.description,
+                          quantity: 1,
+                        })
+                      );
+                    }
+                    closeModal();
+                    router.push(`/menu${queryString}`);
+                  }}
                   className="ml-auto inline-flex items-center gap-2 px-6 py-3 rounded-full font-black text-white text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
                   style={{ background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)", boxShadow: "0 0 30px rgba(232,98,26,0.3)" }}
                 >
                   <ShoppingBag className="w-4 h-4" />
                   Order Now
-                </Link>
+                </button>
               </div>
             </div>
           </div>

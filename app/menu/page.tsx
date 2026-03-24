@@ -262,6 +262,36 @@ function MenuContent() {
     }
   }, []);
 
+  // ─── Auto-add product from landing page carousel ─────────────────────────
+  useEffect(() => {
+    const pendingItem = sessionStorage.getItem("pendingCartItem");
+    if (pendingItem) {
+      try {
+        const item = JSON.parse(pendingItem);
+        // Add to cart
+        setCart((prev) => {
+          const existing = prev.find((i) => i._id === item._id);
+          if (existing) {
+            return prev.map((i) =>
+              i._id === item._id ? { ...i, quantity: i.quantity + item.quantity } : i
+            );
+          }
+          return [...prev, { ...item, ingredients: [] }];
+        });
+        
+        // Open the cart so user sees it was added
+        setShowCart(true);
+        toast.success(`${item.name} added to your cart`);
+        
+        // Clear it so it doesn't add again on refresh
+        sessionStorage.removeItem("pendingCartItem");
+      } catch (e) {
+        console.error("Failed to parse pending cart item:", e);
+        sessionStorage.removeItem("pendingCartItem");
+      }
+    }
+  }, []);
+
   // Make table available when exiting the portal
   useEffect(() => {
     // Clear the payment redirect flag when this page mounts (e.g. user came back from GCash)
