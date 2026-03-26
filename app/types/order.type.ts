@@ -16,6 +16,12 @@ export type QueueStatus =
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
+export interface SelectedAddon {
+  groupName: string;
+  addonName: string;
+  price: number;
+}
+
 export interface CustomerOrderItem {
   _id: string;
   name: string;
@@ -26,6 +32,8 @@ export interface CustomerOrderItem {
   menuType?: "food" | "drink";
   imageUrl?: string;
   ingredients: Array<{ name: string; quantity: string; unit: string }>;
+  selectedAddons?: SelectedAddon[];
+  cartKey?: string;
 }
 
 export interface CustomerOrder {

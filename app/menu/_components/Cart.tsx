@@ -6,8 +6,8 @@ import { useState } from 'react';
 
 interface CartProps {
     items: CustomerOrderItem[];
-    onUpdate: (id: string, change: number) => void;
-    onRemove: (id: string) => void;
+    onUpdate: (cartKey: string, change: number) => void;
+    onRemove: (cartKey: string) => void;
     onClose: () => void;
     onCheckout: () => void;
 }
@@ -33,7 +33,7 @@ export function Cart({ items, onUpdate, onRemove, onClose, onCheckout }: CartPro
                 </button>
             </div>
 
-            {/* Items — scrollable, fills remaining space */}
+            {/* Items — scrollable */}
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-2 sm:space-y-3 overscroll-contain">
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-white/30 py-16">
@@ -41,43 +41,64 @@ export function Cart({ items, onUpdate, onRemove, onClose, onCheckout }: CartPro
                         <p className="text-sm font-medium uppercase tracking-widest">Cart is empty</p>
                     </div>
                 ) : (
-                    items.map(item => (
-                        <div key={item._id} className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/5 border border-white/10">
-                            {item.imageUrl && (
-                                <img src={item.imageUrl} alt={item.name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover flex-shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <p className="font-bold text-white text-xs sm:text-sm truncate uppercase tracking-wide leading-tight">{item.name}</p>
-                                <p className="text-primary text-xs font-bold mt-0.5">
-                                    ₱{(item.price * item.quantity).toFixed(2)}
-                                </p>
+                    items.map(item => {
+                        const key = item.cartKey ?? item._id;
+                        return (
+                            <div key={key} className="flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/5 border border-white/10">
+                                {item.imageUrl && (
+                                    <img src={item.imageUrl} alt={item.name} className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover shrink-0 mt-0.5" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-white text-xs sm:text-sm truncate uppercase tracking-wide leading-tight">{item.name}</p>
+
+                                    {/* Selected addon chips */}
+                                    {item.selectedAddons && item.selectedAddons.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {item.selectedAddons.map(addon => (
+                                                <span
+                                                    key={addon.addonName}
+                                                    className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary"
+                                                >
+                                                    {addon.addonName}
+                                                    {addon.price > 0 && (
+                                                        <span className="text-primary/70">+₱{addon.price.toFixed(0)}</span>
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <p className="text-primary text-xs font-bold mt-1">
+                                        ₱{(item.price * item.quantity).toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 mt-0.5">
+                                    <button
+                                        onClick={() => onUpdate(key, -1)}
+                                        aria-label="Decrease"
+                                        className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-colors touch-manipulation"
+                                    >
+                                        <Minus className="w-3 h-3" />
+                                    </button>
+                                    <span className="text-white font-bold text-sm w-5 text-center">{item.quantity}</span>
+                                    <button
+                                        onClick={() => onUpdate(key, 1)}
+                                        aria-label="Increase"
+                                        className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-colors touch-manipulation"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={() => onRemove(key)}
+                                        aria-label="Remove"
+                                        className="h-7 w-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/30 active:scale-95 transition-colors ml-1 touch-manipulation"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                                <button
-                                    onClick={() => onUpdate(item._id, -1)}
-                                    aria-label="Decrease"
-                                    className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-colors touch-manipulation"
-                                >
-                                    <Minus className="w-3 h-3" />
-                                </button>
-                                <span className="text-white font-bold text-sm w-5 text-center">{item.quantity}</span>
-                                <button
-                                    onClick={() => onUpdate(item._id, 1)}
-                                    aria-label="Increase"
-                                    className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-colors touch-manipulation"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                </button>
-                                <button
-                                    onClick={() => onRemove(item._id)}
-                                    aria-label="Remove"
-                                    className="h-7 w-7 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/30 active:scale-95 transition-colors ml-1 touch-manipulation"
-                                >
-                                    <Trash2 className="w-3 h-3" />
-                                </button>
-                            </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

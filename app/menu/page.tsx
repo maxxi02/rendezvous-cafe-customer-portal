@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { ShoppingCart, Coffee, Utensils, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { MenuCard } from "./_components/MenuCard";
 import { Cart } from "./_components/Cart";
 import { CheckoutModal } from "./_components/CheckoutModal";
-import { CustomerOrderItem, CustomerOrder } from "@/app/types/order.type";
+import { AddonModal } from "./_components/AddonModal";
+import { CustomerOrderItem, CustomerOrder, SelectedAddon } from "@/app/types/order.type";
 import { useSocket } from "../providers/socket-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -25,6 +26,12 @@ interface MenuItem {
   menuType?: "food" | "drink";
   ingredients: Array<{ name: string; quantity: string; unit: string }>;
   available: boolean;
+  addonGroups?: Array<{
+    name: string;
+    required: boolean;
+    multiSelect: boolean;
+    items: Array<{ name: string; price: number }>;
+  }>;
 }
 
 interface CategoryData {
@@ -82,6 +89,10 @@ function MenuContent() {
   const [authOpen, setAuthOpen] = useState(false);
   // null = loading, true = open, false = closed
   const [isShopOpen, setIsShopOpen] = useState<boolean | null>(null);
+
+  // Addon modal state
+  const [addonModalProduct, setAddonModalProduct] = useState<MenuItem | null>(null);
+  const [addonModalOpen, setAddonModalOpen] = useState(false);
   const searchParams = useSearchParams();
   const callbackURL = `/menu${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
@@ -268,21 +279,32 @@ function MenuContent() {
     if (pendingItem) {
       try {
         const item = JSON.parse(pendingItem);
-        // Add to cart
+        const selectedAddons = item.selectedAddons || [];
+        // Build cartKey matching the addToCart logic
+        const cartKey =
+          item._id +
+          (selectedAddons.length > 0
+            ? ':' + selectedAddons.map((a: { addonName: string }) => a.addonName).sort().join(',')
+            : '');
         setCart((prev) => {
-          const existing = prev.find((i) => i._id === item._id);
+          const existing = prev.find((i) => (i.cartKey ?? i._id) === cartKey);
           if (existing) {
             return prev.map((i) =>
-              i._id === item._id ? { ...i, quantity: i.quantity + item.quantity } : i
+              (i.cartKey ?? i._id) === cartKey ? { ...i, quantity: i.quantity + (item.quantity ?? 1) } : i
             );
           }
-          return [...prev, { ...item, ingredients: [] }];
+          return [...prev, {
+            ...item,
+            ingredients: [],
+            selectedAddons,
+            cartKey,
+          }];
         });
-        
+
         // Open the cart so user sees it was added
         setShowCart(true);
         toast.success(`${item.name} added to your cart`);
-        
+
         // Clear it so it doesn't add again on refresh
         sessionStorage.removeItem("pendingCartItem");
       } catch (e) {
@@ -291,6 +313,7 @@ function MenuContent() {
       }
     }
   }, []);
+
 
   // Make table available when exiting the portal
   useEffect(() => {
@@ -406,36 +429,64 @@ function MenuContent() {
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   // Cart actions
-  const addToCart = (product: MenuItem) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i._id === product._id);
+  const addToCart = useCallback((product: MenuItem, selectedAddons: SelectedAddon[] = [], qty = 1) => {
+    const addonTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
+    const effectivePrice = product.price + addonTotal;
+    const cartKey =
+      product._id +
+      (selectedAddons.length > 0
+        ? ':' + selectedAddons.map(a => a.addonName).sort().join(',')
+        : '');
+
+    setCart(prev => {
+      const existing = prev.find(i => i.cartKey === cartKey);
       if (existing) {
-        return prev.map((i) =>
-          i._id === product._id ? { ...i, quantity: i.quantity + 1 } : i,
+        return prev.map(i =>
+          i.cartKey === cartKey ? { ...i, quantity: i.quantity + qty } : i
         );
       }
       return [
         ...prev,
-        { ...product, quantity: 1, ingredients: product.ingredients ?? [] },
+        {
+          ...product,
+          price: effectivePrice,
+          quantity: qty,
+          ingredients: product.ingredients ?? [],
+          selectedAddons,
+          cartKey,
+        },
       ];
     });
     toast.success(`${product.name} added to cart`);
-  };
+  }, []);
 
-  const updateCart = (id: string, change: number) => {
-    setCart((prev) =>
+  const handleOpenAddons = useCallback((product: MenuItem) => {
+    setAddonModalProduct(product);
+    setAddonModalOpen(true);
+  }, []);
+
+  const handleAddonConfirm = useCallback(
+    (product: MenuItem, selectedAddons: SelectedAddon[], quantity: number) => {
+      addToCart(product, selectedAddons, quantity);
+      setAddonModalOpen(false);
+    },
+    [addToCart],
+  );
+
+  const updateCart = (cartKey: string, change: number) => {
+    setCart(prev =>
       prev
-        .map((i) =>
-          i._id === id
+        .map(i =>
+          (i.cartKey ?? i._id) === cartKey
             ? { ...i, quantity: Math.max(1, i.quantity + change) }
             : i,
         )
-        .filter((i) => i.quantity > 0),
+        .filter(i => i.quantity > 0),
     );
   };
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((i) => i._id !== id));
+  const removeFromCart = (cartKey: string) => {
+    setCart(prev => prev.filter(i => (i.cartKey ?? i._id) !== cartKey));
   };
 
   const handleConfirmOrder = async (order: CustomerOrder) => {
@@ -517,7 +568,7 @@ function MenuContent() {
           <div className="flex items-center gap-3 min-w-0">
             <div className="min-w-0">
               <h1 className="text-white font-black text-lg sm:text-2xl uppercase tracking-widest truncate">
-                RNDZVS<span className="hidden sm:inline">OUS</span><span className="text-primary">.</span>
+                RENDEZVOUS<span className="text-primary"> CAFE</span>
               </h1>
               <p className="text-white/40 text-[10px] sm:text-xs tracking-widest uppercase mt-0.5 hidden xs:block">
                 Our Menu
@@ -610,12 +661,15 @@ function MenuContent() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {filteredProducts.map((product) => {
-              const cartItem = cart.find(item => item._id === product._id);
+              const cartItem = cart.find(item => item.cartKey
+                ? item.cartKey.startsWith(product._id)
+                : item._id === product._id);
               return (
-                <MenuCard 
-                  key={product._id} 
-                  product={product} 
-                  onAdd={addToCart} 
+                <MenuCard
+                  key={product._id}
+                  product={product}
+                  onAdd={addToCart}
+                  onOpenAddons={handleOpenAddons}
                   cartQuantity={cartItem?.quantity || 0}
                 />
               );
@@ -685,6 +739,14 @@ function MenuContent() {
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
         callbackURL={callbackURL}
+      />
+
+      {/* Addon Selection Modal */}
+      <AddonModal
+        product={addonModalProduct as any}
+        open={addonModalOpen}
+        onClose={() => setAddonModalOpen(false)}
+        onConfirm={handleAddonConfirm as any}
       />
     </div>
   );

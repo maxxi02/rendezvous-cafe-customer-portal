@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
+import { AddonModal } from "@/app/menu/_components/AddonModal";
+import type { SelectedAddon } from "@/app/types/order.type";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+interface AddonItem { name: string; price: number; }
+interface AddonGroup { name: string; required: boolean; multiSelect: boolean; items: AddonItem[]; }
+
 interface FeaturedProduct {
   _id?: string;
   name: string;
@@ -13,6 +17,7 @@ interface FeaturedProduct {
   description: string;
   price?: number;
   imageUrl: string;
+  addonGroups?: AddonGroup[];
 }
 
 // ─── Fallback configs ─────────────────────────────────────────────────────────
@@ -57,7 +62,15 @@ async function fetchFallbackProducts(): Promise<FeaturedProduct[]> {
     });
     if (matched) {
       const { label } = splitProductName(matched.name);
-      return { name: matched.name, label: label || config.defaultLabel, description: matched.description || "", price: matched.price, imageUrl: matched.imageUrl || FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
+      return {
+        _id: matched._id,
+        name: matched.name,
+        label: label || config.defaultLabel,
+        description: matched.description || "",
+        price: matched.price,
+        imageUrl: matched.imageUrl || FALLBACK_IMAGES[config.search.split("|")[0]] || "",
+        addonGroups: matched.addonGroups || [],
+      };
     }
     return { name: `${config.defaultName} ${config.defaultLabel}`, label: config.defaultLabel, description: "", imageUrl: FALLBACK_IMAGES[config.search.split("|")[0]] || "" };
   });
@@ -83,6 +96,11 @@ export default function HeroSection() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMounted, setModalMounted] = useState(false);
 
+  // Addon modal
+  const [addonProduct, setAddonProduct] = useState<FeaturedProduct | null>(null);
+  const [addonModalOpen, setAddonModalOpen] = useState(false);
+  const pendingNavRef = useRef<string>("");
+
   // ── Data fetch ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -95,13 +113,35 @@ export default function HeroSection() {
     const load = async () => {
       try {
         const res = await fetch(`${API_URL}/api/settings/portal`);
+        // Always fetch categories so we can enrich with addonGroups
+        const catRes = await fetch(`${API_URL}/api/products/categories`);
+        let addonMap: Record<string, any[]> = {};
+        if (catRes.ok) {
+          const cats = await catRes.json();
+          if (Array.isArray(cats)) {
+            cats.forEach((cat: any) => {
+              (cat.products || []).forEach((p: any) => {
+                if (p._id) addonMap[p._id] = p.addonGroups || [];
+                // also index by lowercased name as fallback
+                if (p.name) addonMap[p.name.toLowerCase()] = p.addonGroups || [];
+              });
+            });
+          }
+        }
+
         if (res.ok) {
           const s = await res.json();
           if (Array.isArray(s.featuredProducts) && s.featuredProducts.length > 0) {
             setProducts(
               s.featuredProducts.map((p: any) => {
                 const { name, label } = splitProductName(p.name ?? "");
-                return { name, label, description: p.description || "", price: p.price, imageUrl: p.imageUrl || "" };
+                // Enrich addonGroups from live categories data
+                const addonGroups =
+                  (p._id && addonMap[p._id]) ??
+                  addonMap[(p.name ?? "").toLowerCase()] ??
+                  p.addonGroups ??
+                  [];
+                return { _id: p._id, name, label, description: p.description || "", price: p.price, imageUrl: p.imageUrl || "", addonGroups };
               })
             );
             return;
@@ -116,6 +156,62 @@ export default function HeroSection() {
     };
     load();
   }, []);
+
+  // ── Addon modal helpers ────────────────────────────────────────────────────
+  /** Try to add a featured product: show addon modal if it has addons, else navigate directly */
+  const handleOrderNow = useCallback((product: FeaturedProduct, qs: string) => {
+    const hasAddons = (product.addonGroups?.length ?? 0) > 0;
+    if (hasAddons) {
+      pendingNavRef.current = `/menu${qs}`;
+      // Close lightbox first to avoid z-index conflict, then open addon modal
+      setModalVisible(false);
+      setTimeout(() => {
+        setModalMounted(false);
+        setSelectedProduct(null);
+        document.body.style.overflow = '';
+        setAddonProduct(product);
+        setAddonModalOpen(true);
+      }, 200);
+    } else {
+      // No addons — save item and go straight to menu
+      sessionStorage.setItem(
+        "pendingCartItem",
+        JSON.stringify({
+          _id: product._id || product.name,
+          name: product.name,
+          price: product.price ?? 0,
+          imageUrl: product.imageUrl,
+          description: product.description,
+          quantity: 1,
+          selectedAddons: [],
+        })
+      );
+      closeModal();
+      router.push(`/menu${qs}`);
+    }
+  }, [router]);
+
+  const handleAddonConfirm = useCallback(
+    (product: FeaturedProduct, selectedAddons: SelectedAddon[], quantity: number) => {
+      const addonTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
+      sessionStorage.setItem(
+        "pendingCartItem",
+        JSON.stringify({
+          _id: product._id || product.name,
+          name: product.name,
+          price: (product.price ?? 0) + addonTotal,
+          imageUrl: product.imageUrl,
+          description: product.description,
+          quantity,
+          selectedAddons,
+        })
+      );
+      setAddonModalOpen(false);
+      closeModal();
+      router.push(pendingNavRef.current || `/menu${queryString}`);
+    },
+    [router, queryString]
+  );
 
   // ── Carousel helpers ───────────────────────────────────────────────────────
   const count = products.length;
@@ -519,22 +615,9 @@ export default function HeroSection() {
                 )}
                 <button
                   onClick={() => {
-                    // Save product to sessionStorage so menu page can auto-add it to cart
                     if (selectedProduct) {
-                      sessionStorage.setItem(
-                        "pendingCartItem",
-                        JSON.stringify({
-                          _id: selectedProduct._id || selectedProduct.name,
-                          name: selectedProduct.name,
-                          price: selectedProduct.price ?? 0,
-                          imageUrl: selectedProduct.imageUrl,
-                          description: selectedProduct.description,
-                          quantity: 1,
-                        })
-                      );
+                      handleOrderNow(selectedProduct, queryString);
                     }
-                    closeModal();
-                    router.push(`/menu${queryString}`);
                   }}
                   className="ml-auto inline-flex items-center gap-2 px-6 py-3 rounded-full font-black text-white text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
                   style={{ background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)", boxShadow: "0 0 30px rgba(232,98,26,0.3)" }}
@@ -547,6 +630,14 @@ export default function HeroSection() {
           </div>
         </div>
       )}
+
+      {/* Addon Selection Modal — shown when a featured product has addons */}
+      <AddonModal
+        product={addonProduct as any}
+        open={addonModalOpen}
+        onClose={() => setAddonModalOpen(false)}
+        onConfirm={handleAddonConfirm as any}
+      />
     </>
   );
 }
