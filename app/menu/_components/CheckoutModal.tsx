@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Smartphone, Car, SplitSquareHorizontal, DollarSign, Banknote } from "lucide-react";
+import { X, Loader2, Smartphone, Car, Banknote } from "lucide-react";
 import { CustomerOrder, CustomerOrderItem } from "@/app/types/order.type";
 
 interface SessionData {
@@ -23,7 +23,7 @@ interface CheckoutModalProps {
   sessionData?: SessionData | null;
 }
 
-type PaymentMode = "gcash" | "cash" | "split";
+type PaymentMode = "gcash" | "cash";
 
 export function CheckoutModal({
   items,
@@ -38,42 +38,21 @@ export function CheckoutModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("gcash");
-  const [gcashAmount, setGcashAmount] = useState("");
 
   const customerName = sessionData?.customerName || "Guest";
   const tableId = sessionData?.tableId;
   const sessionId = sessionData?.sessionId;
   const isDriveThru = sessionData?.qrType === "drive-thru";
 
-  const gcashValue = parseFloat(gcashAmount) || 0;
-  const cashValue = paymentMode === "split" ? Math.max(0, total - gcashValue) : 0;
-
-  const gcashError =
-    paymentMode === "split" && gcashAmount !== ""
-      ? gcashValue <= 0
-        ? "GCash amount must be greater than 0"
-        : gcashValue >= total
-        ? `GCash amount must be less than ₱${total.toFixed(2)}`
-        : null
-      : null;
-
   const canPay =
     !loading &&
     (!isDriveThru || vehicleIdentification.trim()) &&
-    (paymentMode === "gcash" ||
-      paymentMode === "cash" ||
-      (paymentMode === "split" && gcashValue > 0 && gcashValue < total));
+    (paymentMode === "gcash" || paymentMode === "cash");
 
   const handlePay = async () => {
     if (isDriveThru && !vehicleIdentification.trim()) {
       setError("Please tell us how to identify you (e.g. car color, name, etc.)");
       return;
-    }
-    if (paymentMode === "split") {
-      if (gcashValue <= 0 || gcashValue >= total) {
-        setError("Enter a valid GCash amount between ₱1 and ₱" + (total - 0.01).toFixed(2));
-        return;
-      }
     }
 
     setLoading(true);
@@ -82,9 +61,8 @@ export function CheckoutModal({
     try {
       const orderId = `customer-${Date.now()}`;
       const effectiveSessionId = sessionId || orderId;
-      const isSplit = paymentMode === "split";
       const isCash = paymentMode === "cash";
-      const gcashCharge = isSplit ? gcashValue : isCash ? 0 : total;
+      const gcashCharge = isCash ? 0 : total;
 
       // 1. Create the order record
       const orderRes = await fetch("/api/order/create", {
@@ -104,8 +82,7 @@ export function CheckoutModal({
           orderType: tableId ? "dine-in" : "takeaway",
           subtotal: total,
           total,
-          paymentMethod: isSplit ? "split" : isCash ? "cash" : "gcash",
-          splitPayment: isSplit ? { cash: cashValue, gcash: gcashCharge } : undefined,
+          paymentMethod: isCash ? "cash" : "gcash",
           timestamp: new Date(),
         }),
       });
@@ -132,7 +109,7 @@ export function CheckoutModal({
         return;
       }
 
-      // 2b. GCash / Split — create PayMongo source
+      // 2b. GCash — create PayMongo source
       const payRes = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,9 +119,7 @@ export function CheckoutModal({
           amount: gcashCharge,
           customerName,
           email: sessionData?.email || "",
-          description: isSplit
-            ? `Order ${orderId} (GCash portion: ₱${gcashCharge.toFixed(2)}, Cash: ₱${cashValue.toFixed(2)})`
-            : `Order ${orderId}`,
+          description: `Order ${orderId}`,
         }),
       });
 
@@ -257,12 +232,12 @@ export function CheckoutModal({
               </div>
             )}
 
-            {/* Payment mode selector */}
+            {/* Payment mode selector — GCash and Cash only */}
             <div>
               <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">
                 Payment Method
               </p>
-              <div className={`grid gap-2 ${isDriveThru ? "grid-cols-2" : "grid-cols-3"}`}>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setPaymentMode("gcash")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
@@ -285,61 +260,8 @@ export function CheckoutModal({
                   <Banknote className="w-4 h-4" />
                   Cash
                 </button>
-                {!isDriveThru && (
-                  <button
-                    onClick={() => setPaymentMode("split")}
-                    className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
-                      paymentMode === "split"
-                        ? "bg-amber-500/20 border-amber-500/60 text-amber-400"
-                        : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
-                    }`}
-                  >
-                    <SplitSquareHorizontal className="w-4 h-4" />
-                    Split
-                  </button>
-                )}
               </div>
             </div>
-
-            {/* Split payment input */}
-            {paymentMode === "split" && (
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3">
-                <div>
-                  <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <Smartphone className="w-3.5 h-3.5 text-blue-400" />
-                    GCash Amount
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">₱</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min="1"
-                      max={total - 0.01}
-                      step="0.01"
-                      value={gcashAmount}
-                      onChange={(e) => setGcashAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full bg-white/10 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/15 transition-all"
-                    />
-                  </div>
-                  {gcashError && (
-                    <p className="text-red-400 text-[11px] mt-1">{gcashError}</p>
-                  )}
-                </div>
-
-                {/* Cash remainder */}
-                <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                  <div className="flex items-center gap-2 text-white/50 text-xs font-bold uppercase tracking-widest">
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                    Cash to collect
-                  </div>
-                  <span className={`font-black text-lg ${cashValue > 0 ? "text-emerald-400" : "text-white/20"}`}>
-                    ₱{cashValue.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            )}
 
             {/* Notes */}
             <div>
@@ -362,25 +284,10 @@ export function CheckoutModal({
               </p>
             )}
 
-            {/* Total breakdown */}
-            <div className="space-y-1 py-3 border-t border-white/10">
-              {paymentMode === "split" && gcashValue > 0 && gcashValue < total && (
-                <>
-                  <div className="flex justify-between text-sm text-white/50">
-                    <span>GCash</span>
-                    <span>₱{gcashValue.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-white/50">
-                    <span>Cash</span>
-                    <span>₱{cashValue.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t border-white/10 pt-1" />
-                </>
-              )}
-              <div className="flex items-center justify-between">
-                <span className="text-white/50 text-sm uppercase tracking-widest font-bold">Total</span>
-                <span className="text-primary font-black text-2xl">₱{total.toFixed(2)}</span>
-              </div>
+            {/* Total */}
+            <div className="flex items-center justify-between py-3 border-t border-white/10">
+              <span className="text-white/50 text-sm uppercase tracking-widest font-bold">Total</span>
+              <span className="text-primary font-black text-2xl">₱{total.toFixed(2)}</span>
             </div>
 
             {/* Pay button */}
@@ -390,8 +297,6 @@ export function CheckoutModal({
               className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg touch-manipulation ${
                 paymentMode === "cash"
                   ? "bg-emerald-500 text-white hover:bg-emerald-400 shadow-emerald-500/20"
-                  : paymentMode === "split"
-                  ? "bg-amber-500 text-white hover:bg-amber-400 shadow-amber-500/20"
                   : "bg-blue-500 text-white hover:bg-blue-400 shadow-blue-500/20"
               }`}
             >
@@ -399,8 +304,6 @@ export function CheckoutModal({
                 <><Loader2 className="w-4 h-4 animate-spin" /> {paymentMode === "cash" ? "Placing Order…" : "Redirecting to GCash…"}</>
               ) : paymentMode === "cash" ? (
                 <><Banknote className="w-4 h-4" /> Pay ₱{total.toFixed(2)} Cash</>
-              ) : paymentMode === "split" ? (
-                <><Smartphone className="w-4 h-4" /> Pay ₱{gcashValue > 0 ? gcashValue.toFixed(2) : "0.00"} via GCash</>
               ) : (
                 <><Smartphone className="w-4 h-4" /> Pay with GCash</>
               )}
@@ -409,11 +312,6 @@ export function CheckoutModal({
             {paymentMode === "cash" && (
               <p className="text-center text-white/20 text-[11px]">
                 Staff will collect ₱{total.toFixed(2)} cash when your order is ready.
-              </p>
-            )}
-            {paymentMode === "split" && gcashValue > 0 && cashValue > 0 && (
-              <p className="text-center text-white/20 text-[11px]">
-                Staff will collect ₱{cashValue.toFixed(2)} cash. GCash portion redirects to PayMongo.
               </p>
             )}
             {paymentMode === "gcash" && (

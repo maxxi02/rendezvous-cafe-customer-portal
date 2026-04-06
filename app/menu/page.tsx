@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ShoppingCart, Coffee, Utensils, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { MenuCard } from "./_components/MenuCard";
@@ -102,7 +102,15 @@ function MenuContent() {
   // Handle auto-session for QR users
   const { user: anonUser, createAnonymousUser } = useAnonymousSession();
 
+  // Guard: only run initAutoSession once per mount to prevent re-runs
+  // caused by anonUser state updating after createAnonymousUser resolves,
+  // which previously triggered a dependency loop that cleared the cart.
+  const sessionInitialized = useRef(false);
+
   useEffect(() => {
+    if (sessionInitialized.current) return;
+    sessionInitialized.current = true;
+
     const initAutoSession = async () => {
       const stored = sessionStorage.getItem("orderSession");
       let currentSession: SessionData | null = null;
@@ -226,7 +234,8 @@ function MenuContent() {
     };
 
     initAutoSession();
-  }, [tableIdQuery, qrTypeQuery, authSession, anonUser, createAnonymousUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Fetch shop status on mount ────────────────────────────────────────────
   useEffect(() => {
