@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { ShoppingBag, Menu, X, Coffee } from "lucide-react";
-import { useSession, signOut, signIn } from "@/lib/auth-client";
+import { useState, useEffect, Suspense } from "react";
+import { ShoppingBag, Menu, X } from "lucide-react";
+import { useSession, signOut } from "@/lib/auth-client";
 import Image from "next/image";
+import { AuthModal } from "@/app/components/shared/AuthModal";
 
 function NavActions({ openAuth }: { openAuth: () => void }) {
     const { data: session, isPending } = useSession();
@@ -92,16 +93,14 @@ function MobileNavActions({ openAuth, closeMenu }: { openAuth: () => void, close
     );
 }
 
-
-import { AuthModal } from "@/app/components/shared/AuthModal";
 // ─── Nav links ─────────────────────────────────────────────────────────────────
 const navLinks = [
     { label: "Home", href: "/" },
     { label: "Stories", href: "/stories" },
 ];
 
-// ─── Navbar ────────────────────────────────────────────────────────────────────
-export default function Navbar() {
+// ─── Inner navbar — uses useSearchParams, must be inside Suspense ──────────────
+function NavbarInner() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [scrolled, setScrolled] = useState(false);
@@ -171,7 +170,6 @@ export default function Navbar() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-3">
-                        {/* Cart — orange circle */}
                         <button
                             aria-label="Cart"
                             className="w-10 h-10 flex items-center justify-center rounded-full hover:scale-110 transition-all duration-300"
@@ -182,7 +180,6 @@ export default function Navbar() {
 
                         <NavActions openAuth={openAuth} />
 
-                        {/* Mobile hamburger */}
                         <button
                             className="md:hidden text-white ml-1"
                             onClick={() => setMobileOpen((v) => !v)}
@@ -220,22 +217,29 @@ export default function Navbar() {
                         </Link>
                     ))}
 
-                    {/* Mobile auth button */}
                     <div className="flex flex-col gap-3 mt-2">
-                        <MobileNavActions 
-                            openAuth={openAuth} 
-                            closeMenu={() => setMobileOpen(false)} 
+                        <MobileNavActions
+                            openAuth={openAuth}
+                            closeMenu={() => setMobileOpen(false)}
                         />
                     </div>
                 </div>
             </div>
 
-            {/* Auth Modal */}
             <AuthModal
                 isOpen={authOpen}
                 onClose={() => setAuthOpen(false)}
                 callbackURL={callbackURL}
             />
         </>
+    );
+}
+
+// ─── Navbar — wraps inner in Suspense so useSearchParams doesn't break SSG ────
+export default function Navbar() {
+    return (
+        <Suspense fallback={null}>
+            <NavbarInner />
+        </Suspense>
     );
 }
