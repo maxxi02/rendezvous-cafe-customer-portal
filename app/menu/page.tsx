@@ -324,50 +324,54 @@ function MenuContent() {
   }, []);
 
 
-  // Make table available when exiting the portal
+  // Keep a ref to sessionData so the beforeunload handler always has the
+  // latest value without needing to re-register on every sessionData change.
+  const sessionDataRef = useRef<SessionData | null>(null);
   useEffect(() => {
-    // Clear the payment redirect flag when this page mounts (e.g. user came back from GCash)
+    sessionDataRef.current = sessionData;
+  }, [sessionData]);
+
+  // Make table available when exiting the portal.
+  // Registered once on mount — uses sessionDataRef so it never needs to
+  // re-register (which previously caused sessionStorage.removeItem to run
+  // on every sessionData update, clearing the payment redirect flag mid-flow).
+  useEffect(() => {
+    // Clear the payment redirect flag once when this page first mounts
+    // (e.g. user came back from GCash and landed here again).
     sessionStorage.removeItem("isRedirectingToPayment");
 
     const handleUnload = () => {
-      if (!sessionData) return;
+      const sd = sessionDataRef.current;
+      if (!sd) return;
 
-      // If the user is being redirected to PayMongo, do NOT delete the anonymous user
       const isRedirectingToPayment =
         sessionStorage.getItem("isRedirectingToPayment") === "true";
       if (isRedirectingToPayment) return;
 
       const apiUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 
-      if (sessionData.tableId && !sessionData.isUnavailable) {
+      if (sd.tableId && !sd.isUnavailable) {
         fetch(`${apiUrl}/api/tables`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            tableId: sessionData.tableId,
-            status: "available",
-          }),
+          body: JSON.stringify({ tableId: sd.tableId, status: "available" }),
           keepalive: true,
-        }).catch(() => { });
+        }).catch(() => {});
       }
 
-      if (sessionData.isAnonymous && sessionData.customerId) {
+      if (sd.isAnonymous && sd.customerId) {
         fetch(`${apiUrl}/api/customer/exit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerId: sessionData.customerId,
-          }),
+          body: JSON.stringify({ customerId: sd.customerId }),
           keepalive: true,
-        }).catch(() => { });
+        }).catch(() => {});
       }
     };
 
     window.addEventListener("beforeunload", handleUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-    };
-  }, [sessionData]);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, []); // mount only — sessionDataRef keeps it current
 
   // Fetch products
   useEffect(() => {

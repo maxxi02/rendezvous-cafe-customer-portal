@@ -20,36 +20,38 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   const { user: anonUser, isLoading: isAnonLoading } = useAnonymousSession();
   const [sessionId, setSessionId] = useState<string | undefined>();
 
-  // Grab the session data from sessionStorage to figure out our room
+  // Grab the session data from sessionStorage to figure out our room.
+  // Use a storage event + one-time read — NOT a polling interval, which
+  // would call setSessionId repeatedly and trigger socket reconnects.
   useEffect(() => {
-    const syncSession = () => {
+    const readSession = () => {
       const stored = sessionStorage.getItem("orderSession");
-      if (stored) {
-        try {
-          const sessionData: any = JSON.parse(stored);
-          // Priority: persistent sessionId -> tableId -> guest fallback
-          const sid =
-            sessionData.sessionId ||
-            sessionData.tableId ||
-            "guest-session-" + sessionData.customerName;
-
-          if (sid !== sessionId) {
-            setSessionId(sid);
-          }
-        } catch (e) {
-          console.error("Failed to parse session data", e);
-        }
+      if (!stored) return;
+      try {
+        const sessionData: any = JSON.parse(stored);
+        const sid =
+          sessionData.sessionId ||
+          sessionData.tableId ||
+          "guest-session-" + sessionData.customerName;
+        setSessionId((prev) => (prev === sid ? prev : sid));
+      } catch (e) {
+        console.error("Failed to parse session data", e);
       }
     };
 
-    syncSession();
-    // Re-check periodically to catch late-initialized sessions from child components
-    const interval = setInterval(syncSession, 2000);
-    return () => clearInterval(interval);
-  }, [sessionId, session]); // depend on session so it might re-run after they log in
+    readSession();
+
+    // Listen for sessionStorage writes from child components (e.g. after session init)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "orderSession") readSession();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []); // run once on mount only
 
   if (isPending || isAnonLoading) {
-    return null; // Or a minimal loading state while we check auth
+    // Don't return null — that unmounts the entire app tree (including cart state).
+    // Render children immediately; SocketProvider will connect once userId resolves.
   }
 
   const effectiveUserId = session?.user?.id || anonUser?.id;
