@@ -262,7 +262,7 @@ export function CheckoutModal({
               <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">
                 Payment Method
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={`grid gap-2 ${isDriveThru ? "grid-cols-2" : "grid-cols-3"}`}>
                 <button
                   onClick={() => setPaymentMode("gcash")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
@@ -285,17 +285,19 @@ export function CheckoutModal({
                   <Banknote className="w-4 h-4" />
                   Cash
                 </button>
-                <button
-                  onClick={() => setPaymentMode("split")}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
-                    paymentMode === "split"
-                      ? "bg-amber-500/20 border-amber-500/60 text-amber-400"
-                      : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
-                  }`}
-                >
-                  <SplitSquareHorizontal className="w-4 h-4" />
-                  Split
-                </button>
+                {!isDriveThru && (
+                  <button
+                    onClick={() => setPaymentMode("split")}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
+                      paymentMode === "split"
+                        ? "bg-amber-500/20 border-amber-500/60 text-amber-400"
+                        : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
+                    }`}
+                  >
+                    <SplitSquareHorizontal className="w-4 h-4" />
+                    Split
+                  </button>
+                )}
               </div>
             </div>
 
