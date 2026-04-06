@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-// After GCash redirects back here, we redirect the customer to /order/waiting
-// The webhook has already (or will shortly) confirm the payment on the server.
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const params = useSearchParams();
   const orderId = params.get("orderId");
   const sessionId = params.get("sessionId");
@@ -103,5 +101,21 @@ export default function PaymentSuccessPage() {
       </div>
       <Loader2 className="w-6 h-6 text-primary animate-spin" />
     </div>
+  );
+}
+
+// After GCash redirects back here, we redirect the customer to /order/waiting.
+// The webhook has already (or will shortly) confirm the payment on the server.
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-6">
+          <Loader2 className="w-6 h-6 text-primary animate-spin" />
+        </div>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
