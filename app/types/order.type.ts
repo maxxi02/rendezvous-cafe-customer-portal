@@ -54,7 +54,7 @@ export interface CustomerOrder {
   timestamp: Date;
 
   // Payment
-  paymentMethod?: "gcash" | "split";
+  paymentMethod?: "gcash" | "cash" | "split";
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
   splitPayment?: { cash: number; gcash: number };

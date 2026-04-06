@@ -112,7 +112,7 @@ function getStatusConfig(status: OrderStatus) {
       return {
         icon: Package,
         title: "Awaiting Payment",
-        subtitle: "Complete your GCash payment to confirm the order.",
+        subtitle: "Complete your payment to confirm the order.",
         iconBg: "bg-yellow-500/20",
         iconColor: "text-yellow-400",
         ringColor: "border-yellow-500/40",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Smartphone, Car, SplitSquareHorizontal, DollarSign } from "lucide-react";
+import { X, Loader2, Smartphone, Car, SplitSquareHorizontal, DollarSign, Banknote } from "lucide-react";
 import { CustomerOrder, CustomerOrderItem } from "@/app/types/order.type";
 
 interface SessionData {
@@ -23,7 +23,7 @@ interface CheckoutModalProps {
   sessionData?: SessionData | null;
 }
 
-type PaymentMode = "gcash" | "split";
+type PaymentMode = "gcash" | "cash" | "split";
 
 export function CheckoutModal({
   items,
@@ -61,6 +61,7 @@ export function CheckoutModal({
     !loading &&
     (!isDriveThru || vehicleIdentification.trim()) &&
     (paymentMode === "gcash" ||
+      paymentMode === "cash" ||
       (paymentMode === "split" && gcashValue > 0 && gcashValue < total));
 
   const handlePay = async () => {
@@ -82,7 +83,8 @@ export function CheckoutModal({
       const orderId = `customer-${Date.now()}`;
       const effectiveSessionId = sessionId || orderId;
       const isSplit = paymentMode === "split";
-      const gcashCharge = isSplit ? gcashValue : total;
+      const isCash = paymentMode === "cash";
+      const gcashCharge = isSplit ? gcashValue : isCash ? 0 : total;
 
       // 1. Create the order record
       const orderRes = await fetch("/api/order/create", {
@@ -102,7 +104,7 @@ export function CheckoutModal({
           orderType: tableId ? "dine-in" : "takeaway",
           subtotal: total,
           total,
-          paymentMethod: isSplit ? "split" : "gcash",
+          paymentMethod: isSplit ? "split" : isCash ? "cash" : "gcash",
           splitPayment: isSplit ? { cash: cashValue, gcash: gcashCharge } : undefined,
           timestamp: new Date(),
         }),
@@ -111,7 +113,26 @@ export function CheckoutModal({
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData?.error || "Failed to register order");
 
-      // 2. Create PayMongo source for the GCash portion only
+      // 2a. Cash — skip PayMongo, go directly to waiting page
+      if (isCash) {
+        const stored = sessionStorage.getItem("orderSession");
+        if (stored) {
+          try {
+            const sess = JSON.parse(stored);
+            sess.sessionId = effectiveSessionId;
+            sess.lastOrderId = orderId;
+            if (sessionData?.customerId) sess.customerId = sessionData.customerId;
+            sessionStorage.setItem("orderSession", JSON.stringify(sess));
+          } catch (e) {
+            console.error("[CheckoutModal] Failed to update session:", e);
+          }
+        }
+        clearCart();
+        window.location.href = "/order/waiting";
+        return;
+      }
+
+      // 2b. GCash / Split — create PayMongo source
       const payRes = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -241,7 +262,7 @@ export function CheckoutModal({
               <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">
                 Payment Method
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setPaymentMode("gcash")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
@@ -251,18 +272,29 @@ export function CheckoutModal({
                   }`}
                 >
                   <Smartphone className="w-4 h-4" />
-                  GCash Only
+                  GCash
+                </button>
+                <button
+                  onClick={() => setPaymentMode("cash")}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
+                    paymentMode === "cash"
+                      ? "bg-emerald-500/20 border-emerald-500/60 text-emerald-400"
+                      : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
+                  }`}
+                >
+                  <Banknote className="w-4 h-4" />
+                  Cash
                 </button>
                 <button
                   onClick={() => setPaymentMode("split")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
                     paymentMode === "split"
-                      ? "bg-emerald-500/20 border-emerald-500/60 text-emerald-400"
+                      ? "bg-amber-500/20 border-amber-500/60 text-amber-400"
                       : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
                   }`}
                 >
                   <SplitSquareHorizontal className="w-4 h-4" />
-                  Cash + GCash
+                  Split
                 </button>
               </div>
             </div>
@@ -354,13 +386,17 @@ export function CheckoutModal({
               onClick={handlePay}
               disabled={!canPay}
               className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg touch-manipulation ${
-                paymentMode === "split"
+                paymentMode === "cash"
                   ? "bg-emerald-500 text-white hover:bg-emerald-400 shadow-emerald-500/20"
+                  : paymentMode === "split"
+                  ? "bg-amber-500 text-white hover:bg-amber-400 shadow-amber-500/20"
                   : "bg-blue-500 text-white hover:bg-blue-400 shadow-blue-500/20"
               }`}
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to GCash…</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {paymentMode === "cash" ? "Placing Order…" : "Redirecting to GCash…"}</>
+              ) : paymentMode === "cash" ? (
+                <><Banknote className="w-4 h-4" /> Pay ₱{total.toFixed(2)} Cash</>
               ) : paymentMode === "split" ? (
                 <><Smartphone className="w-4 h-4" /> Pay ₱{gcashValue > 0 ? gcashValue.toFixed(2) : "0.00"} via GCash</>
               ) : (
@@ -368,6 +404,11 @@ export function CheckoutModal({
               )}
             </button>
 
+            {paymentMode === "cash" && (
+              <p className="text-center text-white/20 text-[11px]">
+                Staff will collect ₱{total.toFixed(2)} cash when your order is ready.
+              </p>
+            )}
             {paymentMode === "split" && gcashValue > 0 && cashValue > 0 && (
               <p className="text-center text-white/20 text-[11px]">
                 Staff will collect ₱{cashValue.toFixed(2)} cash. GCash portion redirects to PayMongo.
