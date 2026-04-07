@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { X, Check, Plus, Minus, Sparkles } from 'lucide-react';
 import { SelectedAddon } from '@/app/types/order.type';
+import { useLenisRef } from '@/app/providers/LenisProvider';
 
 interface AddonItem {
   name: string;
@@ -38,22 +39,25 @@ export function AddonModal({ product, open, onClose, onConfirm }: AddonModalProp
   const [quantity, setQuantity] = useState(1);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const lenisRef = useLenisRef();
 
   // Animate in/out
   useEffect(() => {
     if (open) {
       setMounted(true);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+      lenisRef.current?.stop();
       document.body.style.overflow = 'hidden';
     } else {
       setVisible(false);
       const t = setTimeout(() => {
         setMounted(false);
+        lenisRef.current?.start();
         document.body.style.overflow = '';
       }, 350);
       return () => clearTimeout(t);
     }
-  }, [open]);
+  }, [open, lenisRef]);
 
   const handleClose = useCallback(() => {
     setSelections({});

@@ -4,7 +4,6 @@ import { useSession } from "@/lib/auth-client";
 import { useAnonymousSession } from "@/lib/use-anonymous-session";
 import { SocketProvider } from "./socket-provider";
 import { useEffect, useState } from "react";
-import { Toaster } from "sonner";
 
 interface SessionData {
   customerName: string;

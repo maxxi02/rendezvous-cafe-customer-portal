@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { X, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import { AddonModal } from "@/app/menu/_components/AddonModal";
 import type { SelectedAddon } from "@/app/types/order.type";
+import { useLenisRef } from "@/app/providers/LenisProvider";
 
 interface AddonItem { name: string; price: number; }
 interface AddonGroup { name: string; required: boolean; multiSelect: boolean; items: AddonItem[]; }
@@ -79,6 +80,7 @@ async function fetchFallbackProducts(): Promise<FeaturedProduct[]> {
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function HeroSection() {
   const router = useRouter();
+  const lenisRef = useLenisRef();
   const [queryString, setQueryString] = useState("");
   const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -264,10 +266,11 @@ export default function HeroSection() {
     setModalMounted(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setModalVisible(true)));
     document.body.style.overflow = "hidden";
+    lenisRef.current?.stop();
   };
   const closeModal = () => {
     setModalVisible(false);
-    setTimeout(() => { setModalMounted(false); setSelectedProduct(null); document.body.style.overflow = ""; }, 350);
+    setTimeout(() => { setModalMounted(false); setSelectedProduct(null); lenisRef.current?.start(); document.body.style.overflow = ""; }, 350);
   };
 
   // ── Card layout ────────────────────────────────────────────────────────────
