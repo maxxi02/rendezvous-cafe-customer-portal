@@ -61,27 +61,26 @@ export function Modal({
       aria-modal="true"
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      {/* Backdrop */}
+      {/* Backdrop — pointer events only on the backdrop itself, not children */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Panel */}
+      {/* Panel — pointer-events-auto so buttons inside always work */}
       <div
         ref={contentRef}
         data-lenis-prevent
         className={[
-          'relative z-10 w-full flex flex-col',
+          'relative z-10 w-full flex flex-col pointer-events-auto',
           maxWidth,
           'max-h-[90dvh]',
           'bg-background rounded-2xl border border-white/10 shadow-2xl shadow-black/50',
-          'overflow-hidden',
         ].join(' ')}
       >
-        {/* Merlot accent bar */}
-        <div className="h-1 w-full bg-primary shrink-0" />
+        {/* Accent bar */}
+        <div className="h-1 w-full bg-primary shrink-0 rounded-t-2xl" />
 
         {/* Header */}
         {(title || !hideClose) && (
@@ -108,7 +107,7 @@ export function Modal({
 
         {/* Scrollable body */}
         {children && (
-          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 min-h-0">
             {children}
           </div>
         )}
