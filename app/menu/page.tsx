@@ -15,6 +15,7 @@ import { authClient } from "@/lib/auth-client";
 import { useAnonymousSession } from "@/lib/use-anonymous-session";
 import { AuthModal } from "@/app/components/shared/AuthModal";
 import { MenuAuthActions } from "./_components/MenuAuthActions";
+import { useBranding } from "@/app/providers/BrandingProvider";
 
 interface MenuItem {
   _id: string;
@@ -75,6 +76,7 @@ function MenuContent() {
   const { emitCustomerOrder, onShopStatusChanged, offShopStatusChanged } = useSocket();
   const router = useRouter();
   const { data: authSession } = authClient.useSession();
+  const { logoUrl, logoText, primaryColor } = useBranding();
 
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -580,9 +582,23 @@ function MenuContent() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="min-w-0">
-              <h1 className="text-white font-black text-lg sm:text-2xl uppercase tracking-widest truncate">
-                RENDEZVOUS<span className="text-primary"> CAFE</span>
-              </h1>
+              {/* Logo — mirrors Navbar: image if set, otherwise branded text */}
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={logoText || "Logo"}
+                  className="h-8 max-w-[140px] object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <h1
+                  className="text-white text-lg sm:text-2xl uppercase tracking-widest truncate"
+                  style={{ fontFamily: "var(--brand-logo-font)", fontWeight: 400 }}
+                >
+                  {logoText || "RENDEZVOUS"}
+                  <span style={{ color: "var(--brand-primary)" }}> CAFE</span>
+                </h1>
+              )}
               <p className="text-white/40 text-[10px] sm:text-xs tracking-widest uppercase mt-0.5 hidden xs:block">
                 Our Menu
               </p>

@@ -43,14 +43,28 @@
 
 :root {
   --radius: 0.65rem;
+
+  /* ── Brand colors (overridden at runtime by BrandingProvider) ── */
+  --brand-primary: #E8621A;
+  --brand-accent:  #8B3A00;
+  /* RGB channels for rgba() usage: rgba(var(--brand-primary-rgb), 0.5) */
+  --brand-primary-rgb: 232 98 26;
+  --brand-accent-rgb:  139 58 0;
+  /* Gradient shorthand */
+  --brand-gradient: linear-gradient(135deg, #E8621A 0%, #8B3A00 100%);
+  /* Logo font — overridden by BrandingProvider */
+  --brand-logo-font: 'Cardo', Georgia, serif;
+
+  /* Tailwind's --primary maps to the brand primary so bg-primary / text-primary work */
+  --primary:              var(--brand-primary);
+  --primary-foreground:   oklch(0.98 0.01 33);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.55 0.20 33);
-  --primary-foreground: oklch(0.98 0.01 33);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
@@ -60,7 +74,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.55 0.20 33);
+  --ring: var(--brand-primary);
   --chart-1: oklch(0.70 0.20 33);
   --chart-2: oklch(0.62 0.20 33);
   --chart-3: oklch(0.55 0.20 33);
@@ -68,12 +82,12 @@
   --chart-5: oklch(0.36 0.14 33);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.55 0.20 33);
+  --sidebar-primary: var(--brand-primary);
   --sidebar-primary-foreground: oklch(0.98 0.01 33);
   --sidebar-accent: oklch(0.967 0.001 286.375);
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.55 0.20 33);
+  --sidebar-ring: var(--brand-primary);
 }
 
 .dark {
@@ -83,8 +97,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.21 0.006 285.885);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.55 0.20 33);
-  --primary-foreground: oklch(0.98 0.01 33);
+  /* --primary inherits from :root via --brand-primary */
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.274 0.006 286.033);
@@ -94,7 +107,6 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.55 0.20 33);
   --chart-1: oklch(0.70 0.20 33);
   --chart-2: oklch(0.62 0.20 33);
   --chart-3: oklch(0.55 0.20 33);
@@ -102,12 +114,9 @@
   --chart-5: oklch(0.36 0.14 33);
   --sidebar: oklch(0.21 0.006 285.885);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.55 0.20 33);
-  --sidebar-primary-foreground: oklch(0.98 0.01 33);
   --sidebar-accent: oklch(0.274 0.006 286.033);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.55 0.20 33);
 }
 
 /* ─── Custom font classes ─── */

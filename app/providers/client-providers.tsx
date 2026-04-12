@@ -3,16 +3,8 @@
 import { useSession } from "@/lib/auth-client";
 import { useAnonymousSession } from "@/lib/use-anonymous-session";
 import { SocketProvider } from "./socket-provider";
+import { BrandingProvider } from "./BrandingProvider";
 import { useEffect, useState } from "react";
-
-interface SessionData {
-  customerName: string;
-  tableId?: string;
-  qrType: string;
-  isAnonymous: boolean;
-  lastOrderId?: string;
-  sessionId?: string;
-}
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   const { data: session, isPending } = useSession();
@@ -57,14 +49,17 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   const effectiveUserName = session?.user?.name || anonUser?.name || "Guest";
 
   return (
-    <SocketProvider
-      userId={effectiveUserId}
-      userName={effectiveUserName}
-      userAvatar={session?.user?.image ?? undefined}
-      sessionId={sessionId}
-    >
-      {children}
-      {/* <Toaster position="" richColors /> */}
-    </SocketProvider>
+    // BrandingProvider sits outermost so --brand-primary / --primary CSS vars
+    // are injected globally before any page renders.
+    <BrandingProvider>
+      <SocketProvider
+        userId={effectiveUserId}
+        userName={effectiveUserName}
+        userAvatar={session?.user?.image ?? undefined}
+        sessionId={sessionId}
+      >
+        {children}
+      </SocketProvider>
+    </BrandingProvider>
   );
 }

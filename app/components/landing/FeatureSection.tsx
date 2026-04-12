@@ -24,7 +24,10 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="bg-primary py-24 relative z-10">
+    <section
+      className="py-24 relative z-10"
+      style={{ background: "var(--brand-gradient)" }}
+    >
       <div className="max-w-7xl mx-auto px-6 text-background">
         {/* Section header */}
         <div className="text-center mb-16">
@@ -37,14 +40,17 @@ export default function FeaturesSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {features.map((feature, i) => (
+          {features.map((feature) => (
             <div
               key={feature.title}
               className="group flex flex-col items-center text-center gap-4 p-6 rounded-2xl hover:bg-background/10 transition-all duration-300 cursor-default"
             >
               {/* Icon circle */}
               <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <span className="material-icons text-primary text-3xl">
+                <span
+                  className="material-icons text-3xl"
+                  style={{ color: "var(--brand-primary)" }}
+                >
                   {feature.icon}
                 </span>
               </div>

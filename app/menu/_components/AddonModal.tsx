@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 import { X, Check, Plus, Minus, Sparkles } from 'lucide-react';
@@ -130,8 +130,8 @@ export function AddonModal({ product, open, onClose, onConfirm }: AddonModalProp
           transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease',
           transform: visible ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.96)',
           opacity: visible ? 1 : 0,
-          border: '1.5px solid rgba(232,98,26,0.25)',
-          boxShadow: '0 0 80px -10px rgba(232,98,26,0.35)',
+          border: '1.5px solid rgba(var(--brand-primary-rgb),0.25)',
+          boxShadow: '0 0 80px -10px rgba(var(--brand-primary-rgb),0.35)',
         }}
         onClick={e => e.stopPropagation()}
       >

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -296,7 +296,7 @@ export default function HeroSection() {
         {/* Ambient radial glow */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(232,98,26,0.12) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, rgba(var(--brand-primary-rgb),0.12) 0%, transparent 70%)" }}
         />
 
         {/* Ghost watermark parallax */}
@@ -321,8 +321,8 @@ export default function HeroSection() {
 
           {/* Sidebar tagline */}
           <div className="absolute left-6 xl:left-10 top-1/2 -translate-y-1/2 hidden xl:flex flex-col max-w-[160px] animate-stagger-1">
-            <div className="relative pl-4 border-l-2" style={{ borderColor: "#E8621A" }}>
-              <span className="absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full" style={{ background: "#E8621A" }} />
+            <div className="relative pl-4 border-l-2" style={{ borderColor: "var(--brand-primary)" }}>
+              <span className="absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full" style={{ background: "var(--brand-primary)" }} />
               <p className="text-[9px] leading-relaxed tracking-widest uppercase font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>
                 Discover the taste of freshly cooked meals and savory flavors in every bite.
               </p>
@@ -342,11 +342,11 @@ export default function HeroSection() {
             <span
               className="absolute font-dancing animate-wobble-pulse pointer-events-none"
               style={{
-                color: "#E8621A",
+                color: "var(--brand-primary)",
                 fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
                 bottom: "-0.6em",
                 right: "clamp(-1rem, 2vw, 3rem)",
-                textShadow: "0 0 30px rgba(232,98,26,0.5)",
+                textShadow: "0 0 30px rgba(var(--brand-primary-rgb),0.5)",
                 transformOrigin: "center center",
               }}
             >
@@ -356,16 +356,20 @@ export default function HeroSection() {
 
           {/* Subtitle */}
           <p
-            className="text-xs font-bold tracking-[0.35em] uppercase mb-12 animate-stagger-3"
+            className="text-xs font-bold tracking-[0.35em] uppercase mb-8 md:mb-10 animate-stagger-3"
             style={{ color: "rgba(255,255,255,0.4)" }}
           >
             Our top dishes served fresh and hot
           </p>
 
           {/* ── Coverflow Carousel ─────────────────────────────────────────── */}
+          {/* Stage: taller on desktop so the cards can breathe */}
           <div
             className="relative w-full flex items-center justify-center animate-stagger-3"
-            style={{ height: 400, perspective: "1200px" }}
+            style={{
+              height: "clamp(400px, 55vh, 640px)",
+              perspective: "1400px",
+            }}
             // Touch events
             onTouchStart={(e) => onPointerDown(e.touches[0].clientX)}
             onTouchMove={(e) => onPointerMove(e.touches[0].clientX)}
@@ -377,16 +381,16 @@ export default function HeroSection() {
             onMouseLeave={onPointerUp}
           >
             {isLoading
-              ? /* Skeletons */
+              ? /* Skeletons — match the responsive card sizes */
                 [-1, 0, 1].map((slot) => (
                   <div
                     key={slot}
                     className="absolute rounded-3xl animate-pulse"
                     style={{
-                      width: slot === 0 ? 260 : 200,
-                      height: slot === 0 ? 360 : 290,
+                      width:  slot === 0 ? "min(340px, 72vw)" : "min(260px, 55vw)",
+                      height: slot === 0 ? "min(480px, 58vh)" : "min(370px, 46vh)",
                       background: "#1a1008",
-                      transform: `translateX(${slot * 220}px) scale(${slot === 0 ? 1 : 0.82}) translateZ(${slot === 0 ? 0 : -80}px)`,
+                      transform: `translateX(${slot * 260}px) scale(${slot === 0 ? 1 : 0.82}) translateZ(${slot === 0 ? 0 : -80}px)`,
                       opacity: slot === 0 ? 1 : 0.4,
                       transition: "all 0.5s ease",
                     }}
@@ -396,13 +400,28 @@ export default function HeroSection() {
                   const slot = getSlot(idx);
                   const isActive = slot === 0;
                   const isVisible = Math.abs(slot) <= 1;
-                  // Side cards shift left/right
-                  const horizontalShift = slot * 230 + (isDragging ? dragDelta * 0.4 : 0);
-                  const scale = isActive ? 1 : 0.8;
+
+                  // ── Responsive card dimensions (CSS clamp via JS)
+                  // Active card: 260px (mobile) → up to 380px (desktop)
+                  // Side cards:  200px (mobile) → up to 290px (desktop)
+                  const activeW = "clamp(260px, 28vw, 380px)";
+                  const activeH = "clamp(360px, 48vh, 520px)";
+                  const sideW   = "clamp(200px, 22vw, 295px)";
+                  const sideH   = "clamp(290px, 38vh, 410px)";
+
+                  // Image area is ~70% of card height
+                  const activeImgH = "clamp(256px, 34vh, 370px)";
+                  const sideImgH  = "clamp(200px, 27vh, 290px)";
+
+                  // Spread: sidecards move further apart on wider screens
+                  const spreadPx = typeof window !== "undefined" && window.innerWidth >= 1024 ? 310 : 230;
+                  const horizontalShift = slot * spreadPx + (isDragging ? dragDelta * 0.4 : 0);
+
+                  const scale   = isActive ? 1 : 0.8;
                   const opacity = isActive ? 1 : Math.abs(slot) === 1 ? 0.55 : 0;
-                  const zIndex = isActive ? 20 : Math.abs(slot) === 1 ? 10 : 0;
+                  const zIndex  = isActive ? 20 : Math.abs(slot) === 1 ? 10 : 0;
                   const rotateY = slot === -1 ? 12 : slot === 1 ? -12 : 0;
-                  const tz = isActive ? 0 : -60;
+                  const tz      = isActive ? 0 : -60;
 
                   return (
                     <div
@@ -410,16 +429,16 @@ export default function HeroSection() {
                       onClick={() => { if (isActive && !isDragging && Math.abs(dragDelta) < 10) openModal(product); else if (!isActive) goTo(idx); }}
                       className="absolute rounded-3xl overflow-hidden cursor-pointer select-none"
                       style={{
-                        width: 260,
-                        height: 360,
+                        width:  isActive ? activeW : sideW,
+                        height: isActive ? activeH : sideH,
                         transform: `translateX(${horizontalShift}px) scale(${scale}) rotateY(${rotateY}deg) translateZ(${tz}px)`,
                         opacity,
                         zIndex,
                         transition: isDragging ? "opacity 0.15s ease, box-shadow 0.2s ease" : "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                         background: "#140c06",
-                        border: isActive ? "2px solid rgba(232,98,26,0.6)" : "1px solid rgba(255,255,255,0.07)",
+                        border: isActive ? "2px solid rgba(var(--brand-primary-rgb),0.6)" : "1px solid rgba(255,255,255,0.07)",
                         boxShadow: isActive
-                          ? "0 0 60px -10px rgba(232,98,26,0.55), 0 30px 60px -20px rgba(0,0,0,0.8)"
+                          ? "0 0 60px -10px rgba(var(--brand-primary-rgb),0.55), 0 30px 60px -20px rgba(0,0,0,0.8)"
                           : "none",
                         visibility: isVisible ? "visible" : "hidden",
                         pointerEvents: isVisible ? "auto" : "none",
@@ -427,7 +446,7 @@ export default function HeroSection() {
                       }}
                     >
                       {/* Image */}
-                      <div className="relative w-full" style={{ height: 260 }}>
+                      <div className="relative w-full" style={{ height: isActive ? activeImgH : sideImgH }}>
                         <img
                           src={product.imageUrl || FALLBACK_IMG}
                           alt={product.name}
@@ -444,17 +463,17 @@ export default function HeroSection() {
                         {isActive && (
                           <div
                             className="absolute inset-0"
-                            style={{ background: "radial-gradient(ellipse at 50% 110%, rgba(232,98,26,0.35) 0%, transparent 60%)" }}
+                            style={{ background: "radial-gradient(ellipse at 50% 110%, rgba(var(--brand-primary-rgb),0.35) 0%, transparent 60%)" }}
                           />
                         )}
-                        {/* "Tap to view" */}
+                        {/* "View Details" hover hint */}
                         {isActive && (
                           <div
                             className="absolute inset-0 flex items-end justify-center pb-4 opacity-0 hover:opacity-100 transition-opacity duration-300"
                           >
                             <span
                               className="text-white text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full"
-                              style={{ background: "rgba(232,98,26,0.85)" }}
+                              style={{ background: "rgba(var(--brand-primary-rgb),0.85)" }}
                             >
                               View Details
                             </span>
@@ -469,12 +488,12 @@ export default function HeroSection() {
                         </span>
                         <span
                           className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border"
-                          style={{ color: "#E8621A", borderColor: "#E8621A", background: "rgba(232,98,26,0.08)" }}
+                          style={{ color: "var(--brand-primary)", borderColor: "var(--brand-primary)", background: "rgba(var(--brand-primary-rgb),0.08)" }}
                         >
                           {product.label}
                         </span>
                         {product.price !== undefined && product.price > 0 && (
-                          <span className="text-sm font-bold" style={{ color: "rgba(232,98,26,0.85)" }}>
+                          <span className="text-sm font-bold" style={{ color: "rgba(var(--brand-primary-rgb),0.85)" }}>
                             ₱{product.price.toFixed(2)}
                           </span>
                         )}
@@ -483,22 +502,22 @@ export default function HeroSection() {
                   );
                 })}
 
-            {/* ── Arrow Buttons ──────────────────────────────────────────── */}
+            {/* ── Arrow Buttons — pushed further out on desktop ────────────── */}
             {!isLoading && count > 1 && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); prev(); }}
                   aria-label="Previous"
-                  className="absolute left-2 md:left-6 z-30 flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-110"
-                  style={{ background: "rgba(20,12,6,0.85)", borderColor: "rgba(232,98,26,0.4)", color: "#E8621A" }}
+                  className="absolute left-1 sm:left-4 lg:left-2 xl:left-8 z-30 flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-110"
+                  style={{ background: "rgba(20,12,6,0.85)", borderColor: "rgba(var(--brand-primary-rgb),0.4)", color: "var(--brand-primary)" }}
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); next(); }}
                   aria-label="Next"
-                  className="absolute right-2 md:right-6 z-30 flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-110"
-                  style={{ background: "rgba(20,12,6,0.85)", borderColor: "rgba(232,98,26,0.4)", color: "#E8621A" }}
+                  className="absolute right-1 sm:right-4 lg:right-2 xl:right-8 z-30 flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-110"
+                  style={{ background: "rgba(20,12,6,0.85)", borderColor: "rgba(var(--brand-primary-rgb),0.4)", color: "var(--brand-primary)" }}
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -518,7 +537,7 @@ export default function HeroSection() {
                   style={{
                     width: i === activeIndex ? 24 : 8,
                     height: 8,
-                    background: i === activeIndex ? "#E8621A" : "rgba(255,255,255,0.2)",
+                    background: i === activeIndex ? "var(--brand-primary)" : "rgba(255,255,255,0.2)",
                   }}
                 />
               ))}
@@ -531,8 +550,8 @@ export default function HeroSection() {
               href={`/menu${queryString}`}
               className="inline-block px-14 py-5 rounded-full font-black text-white text-base uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
-                background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)",
-                boxShadow: "0 0 40px rgba(232,98,26,0.35)",
+                background: "var(--brand-gradient)",
+                boxShadow: "0 0 40px rgba(var(--brand-primary-rgb),0.35)",
               }}
             >
               ORDER NOW
@@ -543,8 +562,8 @@ export default function HeroSection() {
         {/* Wavy SVG divider */}
         <div className="relative w-full overflow-hidden leading-none mt-auto" style={{ height: 120 }}>
           <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,60 C180,110 360,10 540,60 C720,110 900,10 1080,60 C1260,110 1380,30 1440,60 L1440,120 L0,120 Z" fill="#E8621A" opacity="0.18" />
-            <path d="M0,80 C200,30 400,120 600,70 C800,20 1000,110 1200,65 C1320,40 1400,90 1440,80 L1440,120 L0,120 Z" fill="#8B3A00" opacity="0.55" />
+            <path d="M0,60 C180,110 360,10 540,60 C720,110 900,10 1080,60 C1260,110 1380,30 1440,60 L1440,120 L0,120 Z" fill="var(--brand-primary)" opacity="0.18" />
+            <path d="M0,80 C200,30 400,120 600,70 C800,20 1000,110 1200,65 C1320,40 1400,90 1440,80 L1440,120 L0,120 Z" fill="var(--brand-accent)" opacity="0.55" />
           </svg>
         </div>
       </main>
@@ -565,8 +584,8 @@ export default function HeroSection() {
             className="relative w-full max-w-lg rounded-3xl overflow-hidden"
             style={{
               background: "#140c06",
-              border: "1.5px solid rgba(232,98,26,0.45)",
-              boxShadow: "0 0 100px -10px rgba(232,98,26,0.65)",
+              border: "1.5px solid rgba(var(--brand-primary-rgb),0.45)",
+              boxShadow: "0 0 100px -10px rgba(var(--brand-primary-rgb),0.65)",
               transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease",
               transform: modalVisible ? "scale(1) translateY(0)" : "scale(0.88) translateY(28px)",
               opacity: modalVisible ? 1 : 0,
@@ -577,7 +596,7 @@ export default function HeroSection() {
             <button
               onClick={closeModal}
               className="absolute top-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 hover:scale-110"
-              style={{ background: "rgba(232,98,26,0.15)", border: "1px solid rgba(232,98,26,0.3)", color: "#E8621A" }}
+              style={{ background: "rgba(var(--brand-primary-rgb),0.15)", border: "1px solid rgba(var(--brand-primary-rgb),0.3)", color: "var(--brand-primary)" }}
             >
               <X className="w-4 h-4" />
             </button>
@@ -591,12 +610,12 @@ export default function HeroSection() {
                 onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
               />
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,12,6,1) 0%, rgba(20,12,6,0.18) 60%, transparent 100%)" }} />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(232,98,26,0.32) 0%, transparent 65%)" }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(var(--brand-primary-rgb),0.32) 0%, transparent 65%)" }} />
             </div>
 
             {/* Body */}
             <div className="px-7 py-6 space-y-4">
-              <span className="inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" style={{ color: "#E8621A", borderColor: "#E8621A", background: "rgba(232,98,26,0.08)" }}>
+              <span className="inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" style={{ color: "var(--brand-primary)", borderColor: "var(--brand-primary)", background: "rgba(var(--brand-primary-rgb),0.08)" }}>
                 {selectedProduct.label || "Best Seller"}
               </span>
 
@@ -612,7 +631,7 @@ export default function HeroSection() {
 
               <div className="flex items-center justify-between pt-2">
                 {selectedProduct.price !== undefined && selectedProduct.price > 0 && (
-                  <span className="text-2xl font-black" style={{ color: "#E8621A" }}>
+                  <span className="text-2xl font-black" style={{ color: "var(--brand-primary)" }}>
                     ₱{selectedProduct.price.toFixed(2)}
                   </span>
                 )}
@@ -623,7 +642,7 @@ export default function HeroSection() {
                     }
                   }}
                   className="ml-auto inline-flex items-center gap-2 px-6 py-3 rounded-full font-black text-white text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95"
-                  style={{ background: "linear-gradient(135deg, #E8621A 0%, #8B3A00 100%)", boxShadow: "0 0 30px rgba(232,98,26,0.3)" }}
+                  style={{ background: "var(--brand-gradient)", boxShadow: "0 0 30px rgba(var(--brand-primary-rgb),0.3)" }}
                 >
                   <ShoppingBag className="w-4 h-4" />
                   Order Now
