@@ -37,7 +37,7 @@ export function CheckoutModal({
   const [vehicleIdentification, setVehicleIdentification] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>("gcash");
+  const paymentMode: PaymentMode = "cash"; // Force cash directly
 
   const customerName = sessionData?.customerName || "Guest";
   const tableId = sessionData?.tableId;
@@ -47,7 +47,7 @@ export function CheckoutModal({
   const canPay =
     !loading &&
     (!isDriveThru || vehicleIdentification.trim()) &&
-    (paymentMode === "gcash" || paymentMode === "cash");
+    paymentMode === "cash";
 
   const handlePay = async () => {
     if (isDriveThru && !vehicleIdentification.trim()) {
@@ -232,37 +232,6 @@ export function CheckoutModal({
               </div>
             )}
 
-            {/* Payment mode selector — GCash and Cash only */}
-            <div>
-              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">
-                Payment Method
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setPaymentMode("gcash")}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
-                    paymentMode === "gcash"
-                      ? "bg-blue-500/20 border-blue-500/60 text-blue-400"
-                      : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4" />
-                  GCash
-                </button>
-                <button
-                  onClick={() => setPaymentMode("cash")}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
-                    paymentMode === "cash"
-                      ? "bg-emerald-500/20 border-emerald-500/60 text-emerald-400"
-                      : "bg-white/5 border-white/10 text-white/50 hover:border-white/20"
-                  }`}
-                >
-                  <Banknote className="w-4 h-4" />
-                  Cash
-                </button>
-              </div>
-            </div>
-
             {/* Notes */}
             <div>
               <label className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2 block">
@@ -290,35 +259,21 @@ export function CheckoutModal({
               <span className="text-primary font-black text-2xl">₱{total.toFixed(2)}</span>
             </div>
 
-            {/* Pay button */}
             <button
               onClick={handlePay}
               disabled={!canPay}
-              className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg touch-manipulation ${
-                paymentMode === "cash"
-                  ? "bg-emerald-500 text-white hover:bg-emerald-400 shadow-emerald-500/20"
-                  : "bg-blue-500 text-white hover:bg-blue-400 shadow-blue-500/20"
-              }`}
+              className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg touch-manipulation bg-emerald-500 text-white hover:bg-emerald-400 shadow-emerald-500/20`}
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> {paymentMode === "cash" ? "Placing Order…" : "Redirecting to GCash…"}</>
-              ) : paymentMode === "cash" ? (
-                <><Banknote className="w-4 h-4" /> Pay ₱{total.toFixed(2)} Cash</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Placing Order…</>
               ) : (
-                <><Smartphone className="w-4 h-4" /> Pay with GCash</>
+                <><Banknote className="w-4 h-4" /> Confirm Order (₱{total.toFixed(2)})</>
               )}
             </button>
 
-            {paymentMode === "cash" && (
-              <p className="text-center text-white/20 text-[11px]">
-                Staff will collect ₱{total.toFixed(2)} cash when your order is ready.
-              </p>
-            )}
-            {paymentMode === "gcash" && (
-              <p className="text-center text-white/20 text-[11px]">
-                You will be redirected to GCash to complete your payment.
-              </p>
-            )}
+            <p className="text-center text-white/20 text-[11px]">
+              Staff will process your order and collect payment.
+            </p>
           </div>
         </div>
       </div>
