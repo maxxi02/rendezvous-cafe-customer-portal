@@ -82,7 +82,7 @@ export function CheckoutModal({
           orderType: tableId ? "dine-in" : "takeaway",
           subtotal: total,
           total,
-          paymentMethod: isCash ? undefined : "gcash",
+          paymentMethod: isCash ? "cash" : "gcash",
           timestamp: new Date(),
         }),
       });
