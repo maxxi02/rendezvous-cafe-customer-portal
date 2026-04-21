@@ -9,11 +9,18 @@ type ModalType = "privacy" | "terms" | "contact" | null;
 // ─── Policy content ────────────────────────────────────────────────────────────
 const PRIVACY_CONTENT = (
   <div className="space-y-6 text-sm text-white/70 leading-relaxed">
-    <p className="text-xs uppercase tracking-[0.3em] text-white/30 font-bold">Last updated: April 2025</p>
+    <p className="text-xs uppercase tracking-[0.3em] text-white/30 font-bold">
+      Last updated: April 2025
+    </p>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">1. Information We Collect</h3>
-      <p>When you use the Rendezvous Café Customer Portal, we may collect the following types of information:</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        1. Information We Collect
+      </h3>
+      <p>
+        When you use the Rendezvous Café Customer Portal, we may collect the
+        following types of information:
+      </p>
       <ul className="list-disc list-inside space-y-1 pl-2">
         <li>Name and email address (when you log in via Google)</li>
         <li>Order history, preferences, and session data</li>
@@ -23,7 +30,9 @@ const PRIVACY_CONTENT = (
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">2. How We Use Your Information</h3>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        2. How We Use Your Information
+      </h3>
       <ul className="list-disc list-inside space-y-1 pl-2">
         <li>To process and fulfill your orders</li>
         <li>To personalize your experience and remember your preferences</li>
@@ -33,68 +42,138 @@ const PRIVACY_CONTENT = (
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">3. Data Sharing</h3>
-      <p>We do not sell, trade, or rent your personal information to third parties. We may share data with service providers strictly required to operate the portal (e.g., payment processors, cloud storage).</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        3. Data Sharing
+      </h3>
+      <p>
+        We do not sell, trade, or rent your personal information to third
+        parties. We may share data with service providers strictly required to
+        operate the portal (e.g., payment processors, cloud storage).
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">4. Cookies & Sessions</h3>
-      <p>We use session storage and cookies to maintain your ordering session and cart state. No tracking cookies are used for advertising purposes.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        4. Cookies & Sessions
+      </h3>
+      <p>
+        We use session storage and cookies to maintain your ordering session and
+        cart state. No tracking cookies are used for advertising purposes.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">5. Data Retention</h3>
-      <p>Your order data is retained for a minimum of 12 months for operational and legal compliance purposes. Anonymous session data is purged within 24 hours of your session ending.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        5. Data Retention
+      </h3>
+      <p>
+        Your order data is retained for a minimum of 12 months for operational
+        and legal compliance purposes. Anonymous session data is purged within
+        24 hours of your session ending.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">6. Your Rights</h3>
-      <p>You have the right to access, correct, or request deletion of your personal data. To exercise these rights, please contact us using the Contact form.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        6. Your Rights
+      </h3>
+      <p>
+        You have the right to access, correct, or request deletion of your
+        personal data. To exercise these rights, please contact us using the
+        Contact form.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">7. Changes to This Policy</h3>
-      <p>We reserve the right to update this Privacy Policy at any time. Changes are effective immediately upon posting. Continued use of the portal constitutes acceptance of the revised policy.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        7. Changes to This Policy
+      </h3>
+      <p>
+        We reserve the right to update this Privacy Policy at any time. Changes
+        are effective immediately upon posting. Continued use of the portal
+        constitutes acceptance of the revised policy.
+      </p>
     </section>
   </div>
 );
 
 const TERMS_CONTENT = (
   <div className="space-y-6 text-sm text-white/70 leading-relaxed">
-    <p className="text-xs uppercase tracking-[0.3em] text-white/30 font-bold">Last updated: April 2025</p>
+    <p className="text-xs uppercase tracking-[0.3em] text-white/30 font-bold">
+      Last updated: April 2025
+    </p>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">1. Acceptance of Terms</h3>
-      <p>By accessing or using the Rendezvous Café Customer Portal, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the portal.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        1. Acceptance of Terms
+      </h3>
+      <p>
+        By accessing or using the Rendezvous Café Customer Portal, you agree to
+        be bound by these Terms of Service. If you do not agree to these terms,
+        please do not use the portal.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">2. Ordering</h3>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        2. Ordering
+      </h3>
       <ul className="list-disc list-inside space-y-1 pl-2">
-        <li>All orders placed through the portal are subject to availability and confirmation</li>
-        <li>Prices are displayed in Philippine Peso (₱) and are inclusive of applicable taxes</li>
-        <li>We reserve the right to cancel or modify orders due to operational constraints</li>
-        <li>By placing an order you confirm the accuracy of your provided details</li>
+        <li>
+          All orders placed through the portal are subject to availability and
+          confirmation
+        </li>
+        <li>
+          Prices are displayed in Philippine Peso (₱) and are inclusive of
+          applicable taxes
+        </li>
+        <li>
+          We reserve the right to cancel or modify orders due to operational
+          constraints
+        </li>
+        <li>
+          By placing an order you confirm the accuracy of your provided details
+        </li>
       </ul>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">3. Payment</h3>
-      <p>Payments are processed securely through our integrated payment gateway. Rendezvous Café does not store full card details. For GCash payments, you will be redirected to the GCash payment page.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        3. Payment
+      </h3>
+      <p>
+        Payments are processed securely through our integrated payment gateway.
+        Rendezvous Café does not store full card details. For GCash payments,
+        you will be redirected to the GCash payment page.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">4. Refunds & Cancellations</h3>
-      <p>Orders may be cancelled before preparation begins. Once preparation has started, cancellations are at the discretion of the café staff. Refunds for valid cancellations will be processed within 5–7 business days.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        4. Refunds & Cancellations
+      </h3>
+      <p>
+        Orders may be cancelled before preparation begins. Once preparation has
+        started, cancellations are at the discretion of the café staff. Refunds
+        for valid cancellations will be processed within 5–7 business days.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">5. User Accounts</h3>
-      <p>You are responsible for maintaining the confidentiality of your account credentials. You agree not to use another person's account or share access to your account.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        5. User Accounts
+      </h3>
+      <p>
+        You are responsible for maintaining the confidentiality of your account
+        credentials. You agree not to use another person's account or share
+        access to your account.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">6. Prohibited Conduct</h3>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        6. Prohibited Conduct
+      </h3>
       <ul className="list-disc list-inside space-y-1 pl-2">
         <li>Placing fraudulent or false orders</li>
         <li>Attempting to interfere with or disrupt the portal's operation</li>
@@ -103,13 +182,25 @@ const TERMS_CONTENT = (
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">7. Limitation of Liability</h3>
-      <p>Rendezvous Café shall not be liable for any indirect, incidental, or consequential damages arising from the use of this portal. Our liability is limited to the value of the order in question.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        7. Limitation of Liability
+      </h3>
+      <p>
+        Rendezvous Café shall not be liable for any indirect, incidental, or
+        consequential damages arising from the use of this portal. Our liability
+        is limited to the value of the order in question.
+      </p>
     </section>
 
     <section className="space-y-2">
-      <h3 className="text-white font-black uppercase tracking-wider text-base">8. Governing Law</h3>
-      <p>These Terms are governed by the laws of the Republic of the Philippines. Any disputes shall be resolved in the appropriate courts of jurisdiction.</p>
+      <h3 className="text-white font-black uppercase tracking-wider text-base">
+        8. Governing Law
+      </h3>
+      <p>
+        These Terms are governed by the laws of the Republic of the Philippines.
+        Any disputes shall be resolved in the appropriate courts of
+        jurisdiction.
+      </p>
     </section>
   </div>
 );
@@ -120,7 +211,9 @@ const CONTACT_CONTENT = (
 
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-xs font-bold uppercase tracking-widest text-white/50">Name</label>
+        <label className="text-xs font-bold uppercase tracking-widest text-white/50">
+          Name
+        </label>
         <input
           type="text"
           placeholder="Your full name"
@@ -128,7 +221,9 @@ const CONTACT_CONTENT = (
         />
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-bold uppercase tracking-widest text-white/50">Email</label>
+        <label className="text-xs font-bold uppercase tracking-widest text-white/50">
+          Email
+        </label>
         <input
           type="email"
           placeholder="your@email.com"
@@ -136,7 +231,9 @@ const CONTACT_CONTENT = (
         />
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-bold uppercase tracking-widest text-white/50">Message</label>
+        <label className="text-xs font-bold uppercase tracking-widest text-white/50">
+          Message
+        </label>
         <textarea
           rows={4}
           placeholder="How can we help you?"
@@ -152,23 +249,54 @@ const CONTACT_CONTENT = (
     </div>
 
     <div className="pt-2 border-t border-white/10 space-y-2">
-      <p className="text-xs text-white/40 uppercase tracking-widest font-bold">Or reach us directly</p>
+      <p className="text-xs text-white/40 uppercase tracking-widest font-bold">
+        Or reach us directly
+      </p>
       <p className="text-white/60">📍 Rendezvous Café, Philippines</p>
-      <p className="text-white/60">📘 <a href="https://www.facebook.com/RendezvousCafePH" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--brand-primary)] transition-colors duration-200">facebook.com/RendezvousCafePH</a></p>
-      <p className="text-white/60">📸 <a href="https://www.instagram.com/rendezvouscafeph" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--brand-primary)] transition-colors duration-200">instagram.com/rendezvouscafeph</a></p>
+      <p className="text-white/60">
+        📘{" "}
+        <a
+          href="https://www.facebook.com/RendezvousCafePH"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--brand-primary)] transition-colors duration-200"
+        >
+          facebook.com/RendezvousCafePH
+        </a>
+      </p>
+      <p className="text-white/60">
+        📸{" "}
+        <a
+          href="https://www.instagram.com/rendezvouscafeph"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--brand-primary)] transition-colors duration-200"
+        >
+          instagram.com/rendezvouscafeph
+        </a>
+      </p>
     </div>
   </div>
 );
 
 // ─── Modal titles ──────────────────────────────────────────────────────────────
-const MODAL_CONFIG: Record<NonNullable<ModalType>, { title: string; content: React.ReactNode }> = {
-  privacy:  { title: "Privacy Policy",    content: PRIVACY_CONTENT },
-  terms:    { title: "Terms of Service",  content: TERMS_CONTENT },
-  contact:  { title: "Contact Us",        content: CONTACT_CONTENT },
+const MODAL_CONFIG: Record<
+  NonNullable<ModalType>,
+  { title: string; content: React.ReactNode }
+> = {
+  privacy: { title: "Privacy Policy", content: PRIVACY_CONTENT },
+  terms: { title: "Terms of Service", content: TERMS_CONTENT },
+  contact: { title: "Contact Us", content: CONTACT_CONTENT },
 };
 
 // ─── Policy Modal ──────────────────────────────────────────────────────────────
-function PolicyModal({ type, onClose }: { type: NonNullable<ModalType>; onClose: () => void }) {
+function PolicyModal({
+  type,
+  onClose,
+}: {
+  type: NonNullable<ModalType>;
+  onClose: () => void;
+}) {
   const { title, content } = MODAL_CONFIG[type];
 
   return (
@@ -212,9 +340,7 @@ function PolicyModal({ type, onClose }: { type: NonNullable<ModalType>; onClose:
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto flex-1 px-6 py-5">
-          {content}
-        </div>
+        <div className="overflow-y-auto flex-1 px-6 py-5">{content}</div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-white/10 shrink-0">
@@ -252,9 +378,9 @@ export default function Footer() {
   const [modal, setModal] = useState<ModalType>(null);
 
   const footerLinks: { label: string; modal: NonNullable<ModalType> }[] = [
-    { label: "Privacy",  modal: "privacy" },
-    { label: "Terms",    modal: "terms" },
-    { label: "Contact",  modal: "contact" },
+    { label: "Privacy", modal: "privacy" },
+    { label: "Terms", modal: "terms" },
+    { label: "Contact", modal: "contact" },
   ];
 
   return (
@@ -262,14 +388,17 @@ export default function Footer() {
       <footer className="bg-background py-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="border-t border-white/10 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
-
             {/* Logo */}
             <a href="/" className="group">
               <span
                 className="text-2xl tracking-wider uppercase text-white transition-colors duration-300 group-hover:text-[var(--brand-primary)]"
-                style={{ fontFamily: "var(--brand-logo-font)", fontWeight: 400 }}
+                style={{
+                  fontFamily: "var(--brand-logo-font)",
+                  fontWeight: 400,
+                }}
               >
-                RENDEZVOUS<span style={{ color: "var(--brand-primary)" }}>.</span>
+                RENDEZVOUS
+                <span style={{ color: "var(--brand-primary)" }}> CAFÉ</span>
               </span>
             </a>
 
@@ -295,11 +424,13 @@ export default function Footer() {
                 aria-label="Facebook"
                 className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white transition-all duration-300"
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = "var(--brand-primary)";
+                  (e.currentTarget as HTMLAnchorElement).style.background =
+                    "var(--brand-primary)";
                   (e.currentTarget as HTMLAnchorElement).style.color = "#000";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.05)";
+                  (e.currentTarget as HTMLAnchorElement).style.background =
+                    "rgba(255,255,255,0.05)";
                   (e.currentTarget as HTMLAnchorElement).style.color = "white";
                 }}
               >
@@ -312,11 +443,13 @@ export default function Footer() {
                 aria-label="Instagram"
                 className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white transition-all duration-300"
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = "var(--brand-primary)";
+                  (e.currentTarget as HTMLAnchorElement).style.background =
+                    "var(--brand-primary)";
                   (e.currentTarget as HTMLAnchorElement).style.color = "#000";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.05)";
+                  (e.currentTarget as HTMLAnchorElement).style.background =
+                    "rgba(255,255,255,0.05)";
                   (e.currentTarget as HTMLAnchorElement).style.color = "white";
                 }}
               >

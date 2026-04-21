@@ -596,7 +596,6 @@ function MenuContent() {
                   style={{ fontFamily: "var(--brand-logo-font)", fontWeight: 400 }}
                 >
                   {logoText || "RENDEZVOUS"}
-                  <span style={{ color: "var(--brand-primary)" }}> CAFE</span>
                 </h1>
               )}
               <p className="text-white/40 text-[10px] sm:text-xs tracking-widest uppercase mt-0.5 hidden xs:block">

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -367,7 +367,7 @@ export default function HeroSection() {
           <div
             className="relative w-full flex items-center justify-center animate-stagger-3"
             style={{
-              height: "clamp(400px, 55vh, 640px)",
+              height: "clamp(400px, 68vh, 820px)",
               perspective: "1400px",
             }}
             // Touch events
@@ -402,19 +402,19 @@ export default function HeroSection() {
                   const isVisible = Math.abs(slot) <= 1;
 
                   // ── Responsive card dimensions (CSS clamp via JS)
-                  // Active card: 260px (mobile) → up to 380px (desktop)
-                  // Side cards:  200px (mobile) → up to 290px (desktop)
-                  const activeW = "clamp(260px, 28vw, 380px)";
-                  const activeH = "clamp(360px, 48vh, 520px)";
-                  const sideW   = "clamp(200px, 22vw, 295px)";
-                  const sideH   = "clamp(290px, 38vh, 410px)";
+                  // Active card: 260px (mobile) → up to 480px (desktop)
+                  // Side cards:  200px (mobile) → up to 370px (desktop)
+                  const activeW = "clamp(260px, 34vw, 480px)";
+                  const activeH = "clamp(360px, 62vh, 680px)";
+                  const sideW   = "clamp(200px, 26vw, 370px)";
+                  const sideH   = "clamp(290px, 50vh, 540px)";
 
                   // Image area is ~70% of card height
-                  const activeImgH = "clamp(256px, 34vh, 370px)";
-                  const sideImgH  = "clamp(200px, 27vh, 290px)";
+                  const activeImgH = "clamp(256px, 44vh, 490px)";
+                  const sideImgH  = "clamp(200px, 35vh, 380px)";
 
                   // Spread: sidecards move further apart on wider screens
-                  const spreadPx = typeof window !== "undefined" && window.innerWidth >= 1024 ? 310 : 230;
+                  const spreadPx = typeof window !== "undefined" && window.innerWidth >= 1024 ? 390 : 230;
                   const horizontalShift = slot * spreadPx + (isDragging ? dragDelta * 0.4 : 0);
 
                   const scale   = isActive ? 1 : 0.8;

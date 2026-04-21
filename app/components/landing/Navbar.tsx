@@ -174,7 +174,6 @@ function NavbarInner() {
                 style={{ fontFamily: "var(--brand-logo-font)", fontWeight: 400 }}
               >
                 {logoText || "RENDEZVOUS"}
-                <span style={{ color: primaryColor }}>.</span>
               </span>
             )}
           </Link>
