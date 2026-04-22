@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET || "";
 const SOCKET_SERVER_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8080";
+  process.env.SOCKET_URL || "https://rendezvous-server-gpmv.onrender.com";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || "";
 
 function verifyWebhookSignature(

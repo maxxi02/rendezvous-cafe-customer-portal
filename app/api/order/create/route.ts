@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SOCKET_SERVER_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8080";
+  process.env.SOCKET_URL || "https://rendezvous-server-gpmv.onrender.com";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || "";
 
 /**
